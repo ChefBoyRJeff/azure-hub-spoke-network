@@ -1,0 +1,10 @@
+# Compiled ARM output (generated from Bicep)
+*.json
+!bicepconfig.json
+
+# Local parameter files that may contain real IDs
+*.local.bicepparam
+
+# OS and editor clutter
+.DS_Store
+.vscode/
