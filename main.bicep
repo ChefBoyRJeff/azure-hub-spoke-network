@@ -45,3 +45,33 @@ resource spokeVnet 'Microsoft.Network/virtualNetworks@2026-03-01' = {
     ]
   }
 }
+
+// Hub → Spoke
+resource hubToSpoke 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2026-03-01' = {
+  parent: hubVnet
+  name: 'peer-hub-to-spoke'
+  properties: {
+    remoteVirtualNetwork: {
+      id: spokeVnet.id
+    }
+    allowVirtualNetworkAccess: true
+    allowForwardedTraffic: true
+    allowGatewayTransit: false
+    useRemoteGateways: false
+  }
+}
+
+// Spoke → Hub
+resource spokeToHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2026-03-01' = {
+  parent: spokeVnet
+  name: 'peer-spoke-to-hub'
+  properties: {
+    remoteVirtualNetwork: {
+      id: hubVnet.id
+    }
+    allowVirtualNetworkAccess: true
+    allowForwardedTraffic: true
+    allowGatewayTransit: false
+    useRemoteGateways: false
+  }
+}
