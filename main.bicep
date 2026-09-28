@@ -79,7 +79,7 @@ resource nsgWorkload 'Microsoft.Network/networkSecurityGroups@2026-03-01' = {
   }
 }
 
-// ─── NEW: Route table for spoke workload subnet ─────────────
+// ─── Route table for spoke workload subnet ──────────────────
 resource rtWorkload 'Microsoft.Network/routeTables@2026-03-01' = {
   name: 'rt-snet-workload'
   location: location
@@ -116,9 +116,9 @@ resource spokeVnet 'Microsoft.Network/virtualNetworks@2026-03-01' = {
           networkSecurityGroup: {
             id: nsgWorkload.id
           }
-          routeTable: {           // NEW
-            id: rtWorkload.id     // NEW
-          }                       // NEW
+          routeTable: {
+            id: rtWorkload.id
+          }
         }
       }
     ]
