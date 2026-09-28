@@ -79,6 +79,25 @@ resource nsgWorkload 'Microsoft.Network/networkSecurityGroups@2026-03-01' = {
   }
 }
 
+// ─── NEW: Route table for spoke workload subnet ─────────────
+resource rtWorkload 'Microsoft.Network/routeTables@2026-03-01' = {
+  name: 'rt-snet-workload'
+  location: location
+  properties: {
+    disableBgpRoutePropagation: false
+    routes: [
+      {
+        name: 'Default-To-Hub-NVA'
+        properties: {
+          addressPrefix: '0.0.0.0/0'
+          nextHopType: 'VirtualAppliance'
+          nextHopIpAddress: '10.0.1.4'
+        }
+      }
+    ]
+  }
+}
+
 // ─── Spoke VNet ─────────────────────────────────────────────
 resource spokeVnet 'Microsoft.Network/virtualNetworks@2026-03-01' = {
   name: 'vnet-spoke'
@@ -97,6 +116,9 @@ resource spokeVnet 'Microsoft.Network/virtualNetworks@2026-03-01' = {
           networkSecurityGroup: {
             id: nsgWorkload.id
           }
+          routeTable: {           // NEW
+            id: rtWorkload.id     // NEW
+          }                       // NEW
         }
       }
     ]
