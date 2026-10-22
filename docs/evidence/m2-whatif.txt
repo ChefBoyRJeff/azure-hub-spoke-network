@@ -1,0 +1,205 @@
+Note: The result may contain false positive predictions (noise).
+You can help us improve the accuracy of the result by opening an issue here: https://aka.ms/WhatIfIssues
+NOTICE! - Want to get What-if without noise? Move to Deployment Stacks What-If https://aka.ms/stackswhatifGA
+
+Resource and property changes are indicated with this symbol:
+  + Create
+
+The deployment will update the following scope:
+
+Scope: /subscriptions/<guid>/resourceGroups/rg-hubspoke-vms
+
+  + Microsoft.Compute/virtualMachines/vm-app1 [2024-11-01]
+
+      apiVersion:                                                            "2024-11-01"
+      id:                                                                    "/subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Compute/virtualMachines/vm-app1"
+      location:                                                              "eastus"
+      name:                                                                  "vm-app1"
+      properties.diagnosticsProfile.bootDiagnostics.enabled:                 true
+      properties.hardwareProfile.vmSize:                                     "Standard_B1s"
+      properties.networkProfile.networkInterfaces: [
+        0:
+
+          id:                      "/subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Network/networkInterfaces/nic-vm-app1"
+          properties.deleteOption: "Delete"
+          properties.primary:      true
+
+      ]
+      properties.osProfile.adminUsername:                                    "labadmin"
+      properties.osProfile.computerName:                                     "vm-app1"
+      properties.osProfile.linuxConfiguration.disablePasswordAuthentication: true
+      properties.osProfile.linuxConfiguration.ssh.publicKeys: [
+        0:
+
+          keyData: "*******"
+          path:    "*******"
+
+      ]
+      properties.storageProfile.imageReference.offer:                        "ubuntu-24_04-lts"
+      properties.storageProfile.imageReference.publisher:                    "Canonical"
+      properties.storageProfile.imageReference.sku:                          "server"
+      properties.storageProfile.imageReference.version:                      "latest"
+      properties.storageProfile.osDisk.createOption:                         "FromImage"
+      properties.storageProfile.osDisk.deleteOption:                         "Delete"
+      properties.storageProfile.osDisk.name:                                 "osdisk-vm-app1"
+      tags.costCenter:                                                       "CC-1001"
+      tags.environment:                                                      "lab"
+      tags.owner:                                                            "jeff"
+      tags.project:                                                          "azure-hub-spoke-network"
+      type:                                                                  "Microsoft.Compute/virtualMachines"
+      zones: [
+        0: "1"
+      ]
+
+  + Microsoft.Compute/virtualMachines/vm-app2 [2024-11-01]
+
+      apiVersion:                                                            "2024-11-01"
+      id:                                                                    "/subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Compute/virtualMachines/vm-app2"
+      location:                                                              "eastus"
+      name:                                                                  "vm-app2"
+      properties.diagnosticsProfile.bootDiagnostics.enabled:                 true
+      properties.hardwareProfile.vmSize:                                     "Standard_B1s"
+      properties.networkProfile.networkInterfaces: [
+        0:
+
+          id:                      "/subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Network/networkInterfaces/nic-vm-app2"
+          properties.deleteOption: "Delete"
+          properties.primary:      true
+
+      ]
+      properties.osProfile.adminUsername:                                    "labadmin"
+      properties.osProfile.computerName:                                     "vm-app2"
+      properties.osProfile.linuxConfiguration.disablePasswordAuthentication: true
+      properties.osProfile.linuxConfiguration.ssh.publicKeys: [
+        0:
+
+          keyData: "*******"
+          path:    "*******"
+
+      ]
+      properties.storageProfile.imageReference.offer:                        "ubuntu-24_04-lts"
+      properties.storageProfile.imageReference.publisher:                    "Canonical"
+      properties.storageProfile.imageReference.sku:                          "server"
+      properties.storageProfile.imageReference.version:                      "latest"
+      properties.storageProfile.osDisk.createOption:                         "FromImage"
+      properties.storageProfile.osDisk.deleteOption:                         "Delete"
+      properties.storageProfile.osDisk.name:                                 "osdisk-vm-app2"
+      tags.costCenter:                                                       "CC-1001"
+      tags.environment:                                                      "lab"
+      tags.owner:                                                            "jeff"
+      tags.project:                                                          "azure-hub-spoke-network"
+      type:                                                                  "Microsoft.Compute/virtualMachines"
+      zones: [
+        0: "1"
+      ]
+
+  + Microsoft.Compute/virtualMachines/vm-nva [2024-11-01]
+
+      apiVersion:                                                            "2024-11-01"
+      id:                                                                    "/subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Compute/virtualMachines/vm-nva"
+      location:                                                              "eastus"
+      name:                                                                  "vm-nva"
+      properties.diagnosticsProfile.bootDiagnostics.enabled:                 true
+      properties.hardwareProfile.vmSize:                                     "Standard_B1s"
+      properties.networkProfile.networkInterfaces: [
+        0:
+
+          id:                      "/subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Network/networkInterfaces/nic-vm-nva"
+          properties.deleteOption: "Delete"
+          properties.primary:      true
+
+      ]
+      properties.osProfile.adminUsername:                                    "labadmin"
+      properties.osProfile.computerName:                                     "vm-nva"
+      properties.osProfile.linuxConfiguration.disablePasswordAuthentication: true
+      properties.osProfile.linuxConfiguration.ssh.publicKeys: [
+        0:
+
+          keyData: "*******"
+          path:    "*******"
+
+      ]
+      properties.storageProfile.imageReference.offer:                        "ubuntu-24_04-lts"
+      properties.storageProfile.imageReference.publisher:                    "Canonical"
+      properties.storageProfile.imageReference.sku:                          "server"
+      properties.storageProfile.imageReference.version:                      "latest"
+      properties.storageProfile.osDisk.createOption:                         "FromImage"
+      properties.storageProfile.osDisk.deleteOption:                         "Delete"
+      properties.storageProfile.osDisk.name:                                 "osdisk-vm-nva"
+      tags.costCenter:                                                       "CC-1001"
+      tags.environment:                                                      "lab"
+      tags.owner:                                                            "jeff"
+      tags.project:                                                          "azure-hub-spoke-network"
+      type:                                                                  "Microsoft.Compute/virtualMachines"
+      zones: [
+        0: "1"
+      ]
+
+  + Microsoft.Network/networkInterfaces/nic-vm-app1 [2026-01-01]
+
+      apiVersion:                    "2026-01-01"
+      id:                            "/subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Network/networkInterfaces/nic-vm-app1"
+      location:                      "eastus"
+      name:                          "nic-vm-app1"
+      properties.enableIPForwarding: false
+      properties.ipConfigurations: [
+        0:
+
+          name:                                 "ipconfig1"
+          properties.privateIPAddress:          "10.1.1.4"
+          properties.privateIPAllocationMethod: "Static"
+          properties.subnet.id:                 "/subscriptions/<guid>/resourceGroups/rg-hubspoke-lab/providers/Microsoft.Network/virtualNetworks/vnet-spoke1/subnets/snet-workload"
+
+      ]
+      tags.costCenter:               "CC-1001"
+      tags.environment:              "lab"
+      tags.owner:                    "jeff"
+      tags.project:                  "azure-hub-spoke-network"
+      type:                          "Microsoft.Network/networkInterfaces"
+
+  + Microsoft.Network/networkInterfaces/nic-vm-app2 [2026-01-01]
+
+      apiVersion:                    "2026-01-01"
+      id:                            "/subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Network/networkInterfaces/nic-vm-app2"
+      location:                      "eastus"
+      name:                          "nic-vm-app2"
+      properties.enableIPForwarding: false
+      properties.ipConfigurations: [
+        0:
+
+          name:                                 "ipconfig1"
+          properties.privateIPAddress:          "10.2.1.4"
+          properties.privateIPAllocationMethod: "Static"
+          properties.subnet.id:                 "/subscriptions/<guid>/resourceGroups/rg-hubspoke-lab/providers/Microsoft.Network/virtualNetworks/vnet-spoke2/subnets/snet-workload"
+
+      ]
+      tags.costCenter:               "CC-1001"
+      tags.environment:              "lab"
+      tags.owner:                    "jeff"
+      tags.project:                  "azure-hub-spoke-network"
+      type:                          "Microsoft.Network/networkInterfaces"
+
+  + Microsoft.Network/networkInterfaces/nic-vm-nva [2026-01-01]
+
+      apiVersion:                    "2026-01-01"
+      id:                            "/subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Network/networkInterfaces/nic-vm-nva"
+      location:                      "eastus"
+      name:                          "nic-vm-nva"
+      properties.enableIPForwarding: false
+      properties.ipConfigurations: [
+        0:
+
+          name:                                 "ipconfig1"
+          properties.privateIPAddress:          "10.0.1.4"
+          properties.privateIPAllocationMethod: "Static"
+          properties.subnet.id:                 "/subscriptions/<guid>/resourceGroups/rg-hubspoke-lab/providers/Microsoft.Network/virtualNetworks/vnet-hub/subnets/snet-shared"
+
+      ]
+      tags.costCenter:               "CC-1001"
+      tags.environment:              "lab"
+      tags.owner:                    "jeff"
+      tags.project:                  "azure-hub-spoke-network"
+      type:                          "Microsoft.Network/networkInterfaces"
+
+Resource changes: 6 to create.
+

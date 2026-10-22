@@ -33,3 +33,4 @@ nsg-spoke2-workload  CC-1001
 rt-spoke2-workload   CC-1001
 vnet-spoke2          CC-1001
 
+
