@@ -1,0 +1,260 @@
+Note: The result may contain false positive predictions (noise).
+You can help us improve the accuracy of the result by opening an issue here: https://aka.ms/WhatIfIssues
+NOTICE! - Want to get What-if without noise? Move to Deployment Stacks What-If https://aka.ms/stackswhatifGA
+
+Resource and property changes are indicated with these symbols:
+  - Delete
+  + Create
+  ~ Modify
+  x Noeffect
+
+The deployment will update the following scope:
+
+Scope: /subscriptions/<guid>/resourceGroups/rg-hubspoke-lab
+
+  ~ Microsoft.Network/networkSecurityGroups/nsg-spoke1-workload [2026-01-01]
+    + tags:
+
+        costCenter:  "CC-1001"
+        environment: "lab"
+        owner:       "jeff"
+        project:     "azure-hub-spoke-network"
+
+    ~ properties.securityRules: [
+      + 1:
+
+          name:                                "Allow-Intra-Subnet"
+          properties.access:                   "Allow"
+          properties.destinationAddressPrefix: "10.1.1.0/25"
+          properties.destinationPortRange:     "*"
+          properties.direction:                "Inbound"
+          properties.priority:                 120
+          properties.protocol:                 "*"
+          properties.sourceAddressPrefix:      "10.1.1.0/25"
+          properties.sourcePortRange:          "*"
+
+      ]
+
+  ~ Microsoft.Network/networkSecurityGroups/nsg-spoke2-workload [2026-01-01]
+    + tags:
+
+        costCenter:  "CC-1001"
+        environment: "lab"
+        owner:       "jeff"
+        project:     "azure-hub-spoke-network"
+
+    ~ properties.securityRules: [
+      + 1:
+
+          name:                                "Allow-Intra-Subnet"
+          properties.access:                   "Allow"
+          properties.destinationAddressPrefix: "10.2.1.0/25"
+          properties.destinationPortRange:     "*"
+          properties.direction:                "Inbound"
+          properties.priority:                 120
+          properties.protocol:                 "*"
+          properties.sourceAddressPrefix:      "10.2.1.0/25"
+          properties.sourcePortRange:          "*"
+
+      ]
+
+  ~ Microsoft.Network/routeTables/rt-spoke1-workload [2026-01-01]
+    + tags:
+
+        costCenter:  "CC-1001"
+        environment: "lab"
+        owner:       "jeff"
+        project:     "azure-hub-spoke-network"
+
+
+  ~ Microsoft.Network/routeTables/rt-spoke2-workload [2026-01-01]
+    + tags:
+
+        costCenter:  "CC-1001"
+        environment: "lab"
+        owner:       "jeff"
+        project:     "azure-hub-spoke-network"
+
+
+  ~ Microsoft.Network/virtualNetworks/vnet-hub [2026-01-01]
+    - properties.privateEndpointVNetPolicies:    "Disabled"
+    + tags:
+
+        costCenter:  "CC-1001"
+        environment: "lab"
+        owner:       "jeff"
+        project:     "azure-hub-spoke-network"
+
+    ~ properties.virtualNetworkPeerings: [
+      ~ 0:
+
+        - properties.doNotVerifyRemoteGateways: false
+        - properties.peerCompleteVnets:         true
+        - properties.peeringSyncLevel:          "FullyInSync"
+        - properties.remoteAddressSpace:
+
+            addressPrefixes: [
+              0: "10.1.0.0/16"
+            ]
+
+        - properties.remoteVirtualNetworkAddressSpace:
+
+            addressPrefixes: [
+              0: "10.1.0.0/16"
+            ]
+
+
+      ~ 1:
+
+        - properties.doNotVerifyRemoteGateways: false
+        - properties.peerCompleteVnets:         true
+        - properties.peeringSyncLevel:          "FullyInSync"
+        - properties.remoteAddressSpace:
+
+            addressPrefixes: [
+              0: "10.2.0.0/16"
+            ]
+
+        - properties.remoteVirtualNetworkAddressSpace:
+
+            addressPrefixes: [
+              0: "10.2.0.0/16"
+            ]
+
+
+      ]
+    x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+    x properties.virtualNetworkPeerings[1].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+
+  ~ Microsoft.Network/virtualNetworks/vnet-hub/virtualNetworkPeerings/peer-hub-to-spoke1 [2026-01-01]
+    - properties.doNotVerifyRemoteGateways: false
+    - properties.peerCompleteVnets:         true
+    - properties.peeringSyncLevel:          "FullyInSync"
+    - properties.remoteAddressSpace:
+
+        addressPrefixes: [
+          0: "10.1.0.0/16"
+        ]
+
+    - properties.remoteVirtualNetworkAddressSpace:
+
+        addressPrefixes: [
+          0: "10.1.0.0/16"
+        ]
+
+
+  ~ Microsoft.Network/virtualNetworks/vnet-hub/virtualNetworkPeerings/peer-hub-to-spoke2 [2026-01-01]
+    - properties.doNotVerifyRemoteGateways: false
+    - properties.peerCompleteVnets:         true
+    - properties.peeringSyncLevel:          "FullyInSync"
+    - properties.remoteAddressSpace:
+
+        addressPrefixes: [
+          0: "10.2.0.0/16"
+        ]
+
+    - properties.remoteVirtualNetworkAddressSpace:
+
+        addressPrefixes: [
+          0: "10.2.0.0/16"
+        ]
+
+
+  ~ Microsoft.Network/virtualNetworks/vnet-spoke1 [2026-01-01]
+    - properties.privateEndpointVNetPolicies:    "Disabled"
+    + tags:
+
+        costCenter:  "CC-1001"
+        environment: "lab"
+        owner:       "jeff"
+        project:     "azure-hub-spoke-network"
+
+    ~ properties.virtualNetworkPeerings: [
+      ~ 0:
+
+        - properties.doNotVerifyRemoteGateways: false
+        - properties.peerCompleteVnets:         true
+        - properties.peeringSyncLevel:          "FullyInSync"
+        - properties.remoteAddressSpace:
+
+            addressPrefixes: [
+              0: "10.0.0.0/16"
+            ]
+
+        - properties.remoteVirtualNetworkAddressSpace:
+
+            addressPrefixes: [
+              0: "10.0.0.0/16"
+            ]
+
+
+      ]
+    x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+
+  ~ Microsoft.Network/virtualNetworks/vnet-spoke1/virtualNetworkPeerings/peer-spoke1-to-hub [2026-01-01]
+    - properties.doNotVerifyRemoteGateways: false
+    - properties.peerCompleteVnets:         true
+    - properties.peeringSyncLevel:          "FullyInSync"
+    - properties.remoteAddressSpace:
+
+        addressPrefixes: [
+          0: "10.0.0.0/16"
+        ]
+
+    - properties.remoteVirtualNetworkAddressSpace:
+
+        addressPrefixes: [
+          0: "10.0.0.0/16"
+        ]
+
+
+  ~ Microsoft.Network/virtualNetworks/vnet-spoke2 [2026-01-01]
+    - properties.privateEndpointVNetPolicies:    "Disabled"
+    + tags:
+
+        costCenter:  "CC-1001"
+        environment: "lab"
+        owner:       "jeff"
+        project:     "azure-hub-spoke-network"
+
+    ~ properties.virtualNetworkPeerings: [
+      ~ 0:
+
+        - properties.doNotVerifyRemoteGateways: false
+        - properties.peerCompleteVnets:         true
+        - properties.peeringSyncLevel:          "FullyInSync"
+        - properties.remoteAddressSpace:
+
+            addressPrefixes: [
+              0: "10.0.0.0/16"
+            ]
+
+        - properties.remoteVirtualNetworkAddressSpace:
+
+            addressPrefixes: [
+              0: "10.0.0.0/16"
+            ]
+
+
+      ]
+    x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+
+  ~ Microsoft.Network/virtualNetworks/vnet-spoke2/virtualNetworkPeerings/peer-spoke2-to-hub [2026-01-01]
+    - properties.doNotVerifyRemoteGateways: false
+    - properties.peerCompleteVnets:         true
+    - properties.peeringSyncLevel:          "FullyInSync"
+    - properties.remoteAddressSpace:
+
+        addressPrefixes: [
+          0: "10.0.0.0/16"
+        ]
+
+    - properties.remoteVirtualNetworkAddressSpace:
+
+        addressPrefixes: [
+          0: "10.0.0.0/16"
+        ]
+
+
+Resource changes: 11 to modify.
+

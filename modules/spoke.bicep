@@ -2,6 +2,9 @@
 @description('Azure region for all spoke resources')
 param location string
 
+@description('Tags applied to every taggable spoke resource')
+param tags object
+
 @description('Short spoke name, used to build resource names (e.g. spoke1)')
 param spokeName string
 
@@ -24,9 +27,10 @@ param hubSharedSubnetPrefix string
 param nvaIpAddress string
 
 // ─── NSG ────────────────────────────────────────────────────
-resource nsg 'Microsoft.Network/networkSecurityGroups@2026-03-01' = {
+resource nsg 'Microsoft.Network/networkSecurityGroups@2026-01-01' = {
   name: 'nsg-${spokeName}-workload'
   location: location
+  tags: tags
   properties: {
     securityRules: [
       {
@@ -59,6 +63,19 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2026-03-01' = {
         }
       }
       {
+        name: 'Allow-Intra-Subnet'
+        properties: {
+          priority: 120
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: '*'
+          sourceAddressPrefix: workloadSubnetPrefix
+          sourcePortRange: '*'
+          destinationAddressPrefix: workloadSubnetPrefix
+          destinationPortRange: '*'
+        }
+      }
+      {
         name: 'Deny-VNet-Inbound'
         properties: {
           priority: 4000
@@ -76,9 +93,10 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2026-03-01' = {
 }
 
 // ─── Route table ────────────────────────────────────────────
-resource routeTable 'Microsoft.Network/routeTables@2026-03-01' = {
+resource routeTable 'Microsoft.Network/routeTables@2026-01-01' = {
   name: 'rt-${spokeName}-workload'
   location: location
+  tags: tags
   properties: {
     disableBgpRoutePropagation: false
     routes: [
@@ -95,9 +113,10 @@ resource routeTable 'Microsoft.Network/routeTables@2026-03-01' = {
 }
 
 // ─── Spoke VNet ─────────────────────────────────────────────
-resource vnet 'Microsoft.Network/virtualNetworks@2026-03-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2026-01-01' = {
   name: 'vnet-${spokeName}'
   location: location
+  tags: tags
   properties: {
     addressSpace: {
       addressPrefixes: [
@@ -122,7 +141,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2026-03-01' = {
 }
 
 // ─── Peering: Spoke → Hub ───────────────────────────────────
-resource spokeToHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2026-03-01' = {
+resource spokeToHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2026-01-01' = {
   parent: vnet
   name: 'peer-${spokeName}-to-hub'
   properties: {

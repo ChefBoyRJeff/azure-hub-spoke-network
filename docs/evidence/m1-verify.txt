@@ -1,0 +1,35 @@
+=== Peerings (must all be Connected / FullyInSync) ===
+Vnet      Name                State      Sync
+--------  ------------------  ---------  -----------
+vnet-hub  peer-hub-to-spoke1  Connected  FullyInSync
+vnet-hub  peer-hub-to-spoke2  Connected  FullyInSync
+Vnet         Name                State      Sync
+-----------  ------------------  ---------  -----------
+vnet-spoke1  peer-spoke1-to-hub  Connected  FullyInSync
+Vnet         Name                State      Sync
+-----------  ------------------  ---------  -----------
+vnet-spoke2  peer-spoke2-to-hub  Connected  FullyInSync
+=== NSG rules ===
+Nsg                  Priority    Name                    Access
+-------------------  ----------  ----------------------  --------
+nsg-spoke1-workload  100         Allow-HTTPS-From-Hub    Allow
+nsg-spoke1-workload  110         Allow-Mgmt-From-Shared  Allow
+nsg-spoke1-workload  120         Allow-Intra-Subnet      Allow
+nsg-spoke1-workload  4000        Deny-VNet-Inbound       Deny
+Nsg                  Priority    Name                    Access
+-------------------  ----------  ----------------------  --------
+nsg-spoke2-workload  100         Allow-HTTPS-From-Hub    Allow
+nsg-spoke2-workload  110         Allow-Mgmt-From-Shared  Allow
+nsg-spoke2-workload  120         Allow-Intra-Subnet      Allow
+nsg-spoke2-workload  4000        Deny-VNet-Inbound       Deny
+=== Tags ===
+Name                 CostCenter
+-------------------  ------------
+vnet-hub             CC-1001
+nsg-spoke1-workload  CC-1001
+rt-spoke1-workload   CC-1001
+vnet-spoke1          CC-1001
+nsg-spoke2-workload  CC-1001
+rt-spoke2-workload   CC-1001
+vnet-spoke2          CC-1001
+

@@ -1,5 +1,13 @@
 param location string = resourceGroup().location
 
+@description('Tags applied to every taggable resource')
+param tags object = {
+  project: 'azure-hub-spoke-network'
+  environment: 'lab'
+  owner: 'jeff'
+  costCenter: 'CC-1001'
+}
+
 // ─── Address plan ───────────────────────────────────────────
 var hubAddressSpace = '10.0.0.0/16'
 var hubSharedSubnetPrefix = '10.0.1.0/26'
@@ -20,9 +28,10 @@ var spokes = [
 ]
 
 // ─── Hub VNet ───────────────────────────────────────────────
-resource hubVnet 'Microsoft.Network/virtualNetworks@2026-03-01' = {
+resource hubVnet 'Microsoft.Network/virtualNetworks@2026-01-01' = {
   name: 'vnet-hub'
   location: location
+  tags: tags
   properties: {
     addressSpace: {
       addressPrefixes: [
@@ -52,6 +61,7 @@ module spokeModules 'modules/spoke.bicep' = [for spoke in spokes: {
   name: 'deploy-${spoke.name}'
   params: {
     location: location
+    tags: tags
     spokeName: spoke.name
     addressSpace: spoke.addressSpace
     workloadSubnetPrefix: spoke.workloadSubnetPrefix
@@ -64,7 +74,7 @@ module spokeModules 'modules/spoke.bicep' = [for spoke in spokes: {
 
 // ─── Peering: Hub → each Spoke ──────────────────────────────
 @batchSize(1)
-resource hubToSpokePeerings 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2026-03-01' = [for (spoke, i) in spokes: {
+resource hubToSpokePeerings 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2026-01-01' = [for (spoke, i) in spokes: {
   parent: hubVnet
   name: 'peer-hub-to-${spoke.name}'
   properties: {
