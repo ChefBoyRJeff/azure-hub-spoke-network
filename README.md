@@ -61,7 +61,7 @@ Usable IPs account for the 5 addresses Azure reserves in every subnet. No addres
 ├── vms.bicep                     # Lab 1 VM layer: three B1s VMs (authored and what-if reviewed; not yet deployed)
 ├── lab2/
 │   ├── main.bicep                # Lab 2: portal-built environment codified as Bicep (findings fixed)
-│   ├── Test-Lab2Connectivity.ps1 # Lab 2: connectivity retest; always deallocates the VMs
+│   ├── Test-Lab2Connectivity.ps1 # Lab 2: connectivity test matrix (PASS/FAIL); deallocates in finally
 │   └── export/                   # Raw portal export + decompiled output (gitignored; reference only)
 └── docs/evidence/                # Sanitized command output for every milestone (m1-*, m2-*, lab2-*)
 ```
@@ -214,7 +214,7 @@ All Lab 2 resources live in `rg-hubspoke-vms` and carry the tag `lab=lab2`.
 | 1 | The **same NSG was attached to both the subnet and the NIC** | No added security. Every rule is evaluated twice, and effective-rule and IP flow verify output shows two layers for one policy, which confuses troubleshooting | Likely cause (not confirmed): in the VM wizard's Networking tab, the NIC network security group option was pointed at the same NSG that was already attached to the subnet | B.1: removed the NIC association in Bicep; the subnet NSG remains | `lab2-03` to `lab2-06`; effective NSGs in `lab2-16` |
 | 2 | **Peering names were swapped.** The hub VNet held `peer-spoke-to-hub` | Names that describe the wrong direction send troubleshooters to the wrong side | Likely cause: manual naming during portal creation. The Add peering dialog asks for both link names (this VNet's and the remote VNet's) on one screen, which makes them easy to swap | B.3: deleted both peerings with the CLI, then recreated them from Bicep with correct names | `lab2-10` to `lab2-15`; routes in `lab2-16` |
 | 3 | **No tags** on any resource | Lab 2 cost couldn't be separated from other resources in Cost Management | Tags were never entered in the portal | B.2: standard tag set plus `lab=lab2` via Bicep; disks and SSH keys tagged with a CLI merge | `lab2-07` to `lab2-09` (12 of 12 tagged) |
-| 4 | **NSGs contain only the default rules** *(open)* | `AllowVnetInBound` allows **all** traffic from the peered VNet. An initial manual TCP 8080 test from the portal build succeeded for this reason (that test wasn't captured as evidence). Lab 1's NSG design would have denied it | Portal-created NSGs start with defaults only | **Not yet fixed.** Planned: apply a least-privilege rule set like Lab 1's | IP flow verify in `lab2-16` names `AllowVnetInBound` as the allowing rule |
+| 4 | **NSGs contained only the default rules** | `AllowVnetInBound` allowed **all** traffic from the peered VNet. An initial manual TCP 8080 test from the portal build succeeded for this reason (that test wasn't captured as evidence) | Portal-created NSGs start with defaults only | B.5: least-privilege inbound rules on both NSGs, ending in an explicit `Deny-VNet-Inbound` at priority 4000 | Before: IP flow verify in `lab2-16` names `AllowVnetInBound`. After: `lab2-19` (rules) and `lab2-21` (8 of 8 PASS, including TCP 8080 blocked) |
 
 **Prevention:** build from code first. Where portal builds happen, export and what-if them against a standard. Enforce tags with Azure Policy (for example *Require a tag on resources*), because tags don't inherit from a VM to its disks.
 
@@ -228,8 +228,9 @@ Each fix followed the same loop: **capture "before" evidence → edit Bicep → 
 | B.2 | Add tags (8 resources in Bicep, 4 by CLI merge) | 4 s | 12 of 12 tagged, 0 missing |
 | B.3 | Fix the peering names | 3 s | Correct names, Connected / FullyInSync; drift check shows 0 creates and 0 deletes |
 | B.4 | Connectivity retest with real traffic | 5.2 min VM runtime | All tests passed (below) |
+| B.5 | Least-privilege NSG rules (finding 4); test script v2 with negative tests | 4 s; 5.7 min VM runtime | 8 of 8 PASS (below) |
 
-The VMs stayed **deallocated** through B.1–B.3. Deploying unchanged VM definitions doesn't start a deallocated VM.
+The VMs stayed **deallocated** through every configuration change. Deploying unchanged VM definitions doesn't start a deallocated VM.
 
 ### Controlled Failure: What-If Isn't Validation
 
@@ -247,7 +248,7 @@ A resource can't be renamed in Azure, so "rename a peering" means delete and rec
 
 ### Connectivity Verification (B.4)
 
-`lab2/Test-Lab2Connectivity.ps1` starts both VMs, runs the tests, and **deallocates both VMs in a `finally` block**, so compute can't be left running even if a test fails or the script is interrupted.
+The first version of `lab2/Test-Lab2Connectivity.ps1` started both VMs, ran positive tests, and deallocated both VMs in a `finally` block. (See the [incident](#incident-interrupted-test-run-left-a-vm-running) for why `finally` reduces but doesn't remove the risk of leaving compute running.) These results are from **before** B.5, with default NSG rules:
 
 | Test | Result |
 |---|---|
@@ -265,6 +266,55 @@ Evidence: `lab2-16-connectivity-retest.txt`
 - **Longest prefix match.** The platform also installs `10.0.0.0/8 → None` (drop). Traffic to 10.21.1.4 matches both that route and `10.21.0.0/16 → VNetPeering`. The more specific /16 wins. Without the peering, the /8 drop route would apply and packets would be silently discarded.
 - **A route isn't a path.** `0.0.0.0/0 → Internet` is listed, but with `defaultOutboundAccess: false` and no public IP or NAT gateway, the VMs still have no outbound internet access.
 
+### Least-Privilege NSGs and the Test Matrix (B.5)
+
+Both NSGs now override `AllowVnetInBound` (priority 65000) with an explicit deny at priority 4000, and allow only what the design needs. Spokes don't manage the hub.
+
+| NSG | Priority | Rule | Allows |
+|---|---|---|---|
+| Spoke | 100 | Allow-SSH-From-Hub-Shared | TCP 22 from 10.20.1.0/24 |
+| Spoke | 110 | Allow-ICMP-From-Hub | ICMP from 10.20.0.0/16 |
+| Spoke | 120 | Allow-Intra-Subnet | Anything within 10.21.1.0/24 |
+| Spoke | 4000 | Deny-VNet-Inbound | **Denies** all other VirtualNetwork traffic |
+| Hub | 100 | Allow-ICMP-From-Spoke | ICMP from 10.21.0.0/16 |
+| Hub | 120 | Allow-Intra-Subnet | Anything within 10.20.1.0/24 |
+| Hub | 4000 | Deny-VNet-Inbound | **Denies** all other VirtualNetwork traffic |
+
+NSGs are **stateful**, so return traffic for the hub's SSH sessions to the spoke is allowed without an inbound rule on the hub. The address prefixes are defined once as variables and shared by the VNets and the NSG rules. What-if confirmed that this refactor changed no VNet addresses (`lab2-17`).
+
+**Test script v2** encodes the expected result of every test and reports PASS or FAIL. A security change needs **negative tests**: proof that traffic that should be blocked actually is.
+
+| # | Test | Expected | Actual |
+|---|---|---|---|
+| 1 | Hub → spoke ping | open | open |
+| 2 | Hub → spoke TCP 22 | open | open |
+| 3 | Hub → spoke **TCP 8080** | blocked | **timed out** (closes the original 8080 finding) |
+| 4 | Spoke → hub ping | open | open |
+| 5 | Spoke → hub **TCP 22** | blocked | **timed out** |
+| 6 | IP flow verify: TCP 22 into spoke | Allow / Allow-SSH-From-Hub-Shared | match |
+| 7 | IP flow verify: TCP 8080 into spoke | Deny / Deny-VNet-Inbound | match |
+| 8 | IP flow verify: TCP 22 into hub | Deny / Deny-VNet-Inbound | match |
+
+**Result: 8 of 8 PASS** (`lab2-21`).
+
+A blocked TCP test passes **only on a timeout**. An NSG deny silently drops packets, so the client times out. "Connection refused" means the packet **reached** the VM and nothing was listening, so the NSG allowed it. Counting both as "blocked" would hide a misconfigured NSG behind a closed port.
+
+`lab2-20` is the same traffic run with the **v1** script after B.5. Its heading says "expect success" for spoke → hub TCP 22, but the correct result under B.5 is the timeout it recorded. That gap is why v2 puts expectations in the test instead of in the reader's head.
+
+**A second security layer the raw JSON revealed.** Each NIC's effective rules include a second entry associated with **`networkManager`**, not a subnet or NIC. It points to an `adminNetworkSecurityGroups` resource holding one rule, `DefaultIPv6OutboundDeny` (priority 0, Deny, to specific Azure IPv6 addresses). This is an **Azure Virtual Network Manager security admin rule**. Admin rules are evaluated **before** NSGs, and an NSG can't override them. It wasn't created in this lab and has a system-style name, so it appears to be platform-applied (not confirmed). It only affects outbound IPv6, so it has no effect on these tests. Raw data: `lab2-21-connectivity-matrix-b5-effective-nsg-raw.txt`.
+
+### Incident: Interrupted Test Run Left a VM Running
+
+| | |
+|---|---|
+| **Symptom** | After a test run was stopped with Ctrl+C, a power-state check showed `vm-hub-lab2: VM running` and `vm-spoke-lab2: VM deallocated` |
+| **Evidence** | The run's log ended at `Starting vm-hub-lab2...` then `Deallocating vm-hub-lab2...`, with no further lines. That partial log was deleted as a duplicate run, so this record is written from the session, not an evidence file |
+| **Root cause** | Ctrl+C arrived while `az vm start` was running. PowerShell moved to the `finally` block, but the start request had already reached Azure, so the VM kept starting. The cleanup's own `az vm deallocate` was then interrupted before it finished |
+| **Remediation** | Ran `az vm deallocate` by hand and confirmed both VMs showed `VM deallocated`. About 2 minutes of one B1s VM, a fraction of a cent |
+| **Prevention** | Check the power state after any interrupted run. Treat the budget alert as a slow backstop, not a stop. Planned: VM auto-shutdown as an independent guard |
+
+**Lesson:** `finally` makes cleanup the default, but cleanup can be interrupted too. A safety mechanism should be verified, and it shouldn't be the only one.
+
 ### Re-Running Lab 2
 
 ```powershell
@@ -276,8 +326,11 @@ $spokeKey = az sshkey show -g rg-hubspoke-vms -n key-vm-spoke-lab2 --query publi
 az deployment group what-if -g rg-hubspoke-vms --template-file lab2\main.bicep `
   --parameters hubSshPublicKey="$hubKey" spokeSshPublicKey="$spokeKey"
 
-# Connectivity retest (billable for a few minutes; always deallocates at the end)
-.\lab2\Test-Lab2Connectivity.ps1
+# Test matrix (billable for a few minutes; deallocates at the end). Use a new file name each run.
+.\lab2\Test-Lab2Connectivity.ps1 -OutFile docs\evidence\lab2-NN-connectivity-matrix.txt
+
+# After ANY run, and always after an interrupted one: confirm both VMs show "VM deallocated"
+az vm list -d -g rg-hubspoke-vms --query "[].{name:name,power:powerState}" -o table
 ```
 
 The template targets the existing environment. The OS disk names and SSH keys must match what's deployed, so it isn't meant for a fresh deployment as written.
@@ -294,7 +347,11 @@ The template targets the existing environment. The OS disk names and SSH keys mu
 | `lab2-10`, `lab2-11` | B.3: peerings before; what-if with old peerings present |
 | `lab2-11a`, `lab2-11b` | Controlled failure and state afterward |
 | `lab2-12` to `lab2-15` | Deletion (including the `Disconnected` state), what-if, deploy, verify and drift check |
-| `lab2-16-connectivity-retest.txt` | Effective NSGs and routes, ping and TCP tests, IP flow verify, deallocation |
+| `lab2-16-connectivity-retest.txt` | B.4 (default NSG rules): effective NSGs and routes, ping and TCP tests, IP flow verify, deallocation |
+| `lab2-17` to `lab2-19` | B.5: NSG what-if, deploy, rules by priority |
+| `lab2-20-connectivity-b5-v1-script.txt` | B.5 traffic run with the v1 script (its "expect success" heading predates B.5) |
+| `lab2-21-connectivity-matrix-b5.txt` | B.5 test matrix: 8 of 8 PASS |
+| `lab2-21-...-effective-nsg-raw.txt` | Raw effective-NSG JSON, including the security admin rule |
 
 ### Cost and Preservation Policy
 
@@ -315,11 +372,12 @@ az group delete --name rg-hubspoke-vms --yes
 
 ### Known Limitations
 
-- **Finding 4 is open:** the Lab 2 NSGs still use only default rules.
+- **Cleanup can be interrupted.** The test script deallocates in `finally`, but an interrupted run once left a VM running (see the incident). Auto-shutdown isn't configured yet.
+- **ICMP and TCP only.** UDP wasn't tested, and IP flow verify doesn't test ICMP.
 - **Disk and SSH key tags are outside Bicep.** What-if won't detect them being removed. Azure Policy is the intended control.
 - **`lab2/main.bicep` describes the existing environment.** It pins OS disk names and uses existing keys, so it isn't a template for a fresh deployment.
 - **The rename needed an imperative step.** Incremental mode can't delete. Complete mode or deployment stacks could, but they would need careful scoping in a resource group shared with other work.
-- **Unexplained output:** the effective-NSG output contains a second, empty entry per NIC. The result isn't affected (one NSG is in effect), but its cause wasn't confirmed.
+- **The security admin rule's origin is unconfirmed.** It appears to be platform-applied. Its effect (outbound IPv6 only) was read from the raw JSON, not tested.
 - **No flow logs or monitoring** were enabled (cost). They're planned in the monitoring project.
 
 ---
@@ -349,11 +407,13 @@ az group delete --name rg-hubspoke-vms --yes
 - **I learned that exported templates are a starting point, not working code.** Decompiling my portal build produced 18 errors, mostly because subnets and peerings were declared twice. I didn't trust my cleaned-up version until what-if showed zero creates and zero deletes against the live environment.
 - **I learned to read what-if critically.** Most "modify" lines were noise from service defaults and read-only fields. I learned to compare each what-if with the previous one so the real change stood out. I also confirmed that what-if can look clean while the deployment still fails: my peering rename showed two clean creates, then failed with `AnotherPeeringAlreadyReferencesRemoteVnet`.
 - **I learned to prove fixes with traffic, not just configuration.** Effective security rules, effective routes, Run Command tests, and IP flow verify showed what Azure actually enforces. The route table also showed longest prefix match in action: my /16 peering route won over the platform's 10.0.0.0/8 drop route.
-- **I made cleanup automatic instead of something to remember.** My test script deallocates the VMs in a `finally` block, so a failed test or an interrupted run can't leave compute running.
+- **I made cleanup automatic, then learned it isn't enough on its own.** My test script deallocates the VMs in a `finally` block. When I interrupted a run with Ctrl+C, the cleanup was interrupted too, and a power-state check showed one VM still running. I deallocated it by hand. Now I always check the power state after a run.
+- **I learned to test what should fail, not just what should work.** After locking the NSGs down, my test matrix included traffic that should be blocked, such as TCP 8080 into the spoke. I learned that a timeout means an NSG dropped the packet, while "connection refused" means the packet got through and nothing was listening. Treating those as the same would hide a broken rule.
+- **I found a security layer I didn't create.** The raw effective-rules JSON showed an Azure Virtual Network Manager security admin rule next to my NSG. Admin rules are evaluated before NSGs, so when an NSG looks right but traffic is still blocked, that's another place to check.
 
 ## Future Improvements
 
-- Apply least-privilege NSG rules to Lab 2 (finding 4), then re-run the retest to show the expected allows and denies
+- Configure VM auto-shutdown on the Lab 2 VMs as an independent guard against forgotten compute
 - Enforce required tags with Azure Policy instead of tagging disks by hand
 - Add a GitHub Actions workflow that runs `what-if` on pull requests
 - Move the address plan into a `.bicepparam` file for per-environment deployments
