@@ -13,10 +13,20 @@ param hubSshPublicKey string
 @description('SSH public key on vm-spoke-lab2 (read from Azure at deploy time; must match the existing key)')
 param spokeSshPublicKey string
 
+@description('Standard tags applied to every lab2 resource that supports them')
+param tags object = {
+  project: 'azure-hub-spoke-network'
+  lab: 'lab2'
+  environment: 'lab'
+  owner: 'jeff'
+  costCenter: 'CC-1001'
+}
+
 // ─── NSGs (defaults only; no custom rules) ──────────────────
 resource nsgHub 'Microsoft.Network/networkSecurityGroups@2025-09-01' = {
   name: 'nsg-hub-lab2'
   location: location
+  tags: tags
   properties: {
     securityRules: []
   }
@@ -25,6 +35,7 @@ resource nsgHub 'Microsoft.Network/networkSecurityGroups@2025-09-01' = {
 resource nsgSpoke 'Microsoft.Network/networkSecurityGroups@2025-09-01' = {
   name: 'nsg-spoke-lab2'
   location: location
+  tags: tags
   properties: {
     securityRules: []
   }
@@ -34,6 +45,7 @@ resource nsgSpoke 'Microsoft.Network/networkSecurityGroups@2025-09-01' = {
 resource vnetHub 'Microsoft.Network/virtualNetworks@2025-09-01' = {
   name: 'vnet-hub-lab2'
   location: location
+  tags: tags
   properties: {
     addressSpace: {
       addressPrefixes: [
@@ -60,6 +72,7 @@ resource vnetHub 'Microsoft.Network/virtualNetworks@2025-09-01' = {
 resource vnetSpoke 'Microsoft.Network/virtualNetworks@2025-09-01' = {
   name: 'vnet-spoke-lab2'
   location: location
+  tags: tags
   properties: {
     addressSpace: {
       addressPrefixes: [
@@ -117,6 +130,7 @@ resource peeringOnSpoke 'Microsoft.Network/virtualNetworks/virtualNetworkPeering
 resource nicHub 'Microsoft.Network/networkInterfaces@2025-09-01' = {
   name: 'vm-hub-lab2100'
   location: location
+  tags: tags
   properties: {
     enableIPForwarding: false
     ipConfigurations: [
@@ -138,6 +152,7 @@ resource nicHub 'Microsoft.Network/networkInterfaces@2025-09-01' = {
 resource nicSpoke 'Microsoft.Network/networkInterfaces@2025-09-01' = {
   name: 'vm-spoke-lab2403'
   location: location
+  tags: tags
   properties: {
     enableIPForwarding: false
     ipConfigurations: [
@@ -160,6 +175,7 @@ resource nicSpoke 'Microsoft.Network/networkInterfaces@2025-09-01' = {
 resource vmHub 'Microsoft.Compute/virtualMachines@2026-04-01' = {
   name: 'vm-hub-lab2'
   location: location
+  tags: tags
   properties: {
     hardwareProfile: {
       vmSize: 'Standard_B1s'
@@ -221,6 +237,7 @@ resource vmHub 'Microsoft.Compute/virtualMachines@2026-04-01' = {
 resource vmSpoke 'Microsoft.Compute/virtualMachines@2026-04-01' = {
   name: 'vm-spoke-lab2'
   location: location
+  tags: tags
   properties: {
     hardwareProfile: {
       vmSize: 'Standard_B1s'

@@ -1,0 +1,26 @@
+=== Resources tagged lab=lab2 (expect 12) ===
+disks                              vm-hub-lab2_OsDisk_1_13cb237c47bd480c9f81873eb6d399df    project=azure-hub-spoke-network env=lab owner=jeff cc=CC-1001
+disks                              vm-spoke-lab2_OsDisk_1_21494d66c3b54adfaa7db655958f229f  project=azure-hub-spoke-network env=lab owner=jeff cc=CC-1001
+sshPublicKeys                      key-vm-hub-lab2                                          project=azure-hub-spoke-network env=lab owner=jeff cc=CC-1001
+sshPublicKeys                      key-vm-spoke-lab2                                        project=azure-hub-spoke-network env=lab owner=jeff cc=CC-1001
+virtualMachines                    vm-hub-lab2                                              project=azure-hub-spoke-network env=lab owner=jeff cc=CC-1001
+virtualMachines                    vm-spoke-lab2                                            project=azure-hub-spoke-network env=lab owner=jeff cc=CC-1001
+networkInterfaces                  vm-hub-lab2100                                           project=azure-hub-spoke-network env=lab owner=jeff cc=CC-1001
+networkInterfaces                  vm-spoke-lab2403                                         project=azure-hub-spoke-network env=lab owner=jeff cc=CC-1001
+networkSecurityGroups              nsg-hub-lab2                                             project=azure-hub-spoke-network env=lab owner=jeff cc=CC-1001
+networkSecurityGroups              nsg-spoke-lab2                                           project=azure-hub-spoke-network env=lab owner=jeff cc=CC-1001
+virtualNetworks                    vnet-hub-lab2                                            project=azure-hub-spoke-network env=lab owner=jeff cc=CC-1001
+virtualNetworks                    vnet-spoke-lab2                                          project=azure-hub-spoke-network env=lab owner=jeff cc=CC-1001
+count: 12
+=== lab2 resources MISSING the lab tag (expect none) ===
+=== Peerings (expect Connected / FullyInSync) ===
+Name               State      Sync
+-----------------  ---------  -----------
+peer-spoke-to-hub  Connected  FullyInSync
+Name               State      Sync
+-----------------  ---------  -----------
+peer-hub-to-spoke  Connected  FullyInSync
+=== VM power state (expect deallocated) ===
+vm-hub-lab2: VM deallocated
+vm-spoke-lab2: VM deallocated
+
