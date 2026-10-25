@@ -1,0 +1,17 @@
+=== AFTER B.5: custom inbound rules, by priority ===
+--- nsg-hub-lab2 ---
+100   Allow-ICMP-From-Spoke      Allow  Icmp  src=10.21.0.0/16    dst=10.20.1.0/24  port=*
+120   Allow-Intra-Subnet         Allow  *     src=10.20.1.0/24    dst=10.20.1.0/24  port=*
+4000  Deny-VNet-Inbound          Deny   *     src=VirtualNetwork  dst=*             port=*
+--- nsg-spoke-lab2 ---
+100   Allow-SSH-From-Hub-Shared  Allow  Tcp   src=10.20.1.0/24    dst=10.21.1.0/24  port=22
+110   Allow-ICMP-From-Hub        Allow  Icmp  src=10.20.0.0/16    dst=10.21.1.0/24  port=*
+120   Allow-Intra-Subnet         Allow  *     src=10.21.1.0/24    dst=10.21.1.0/24  port=*
+4000  Deny-VNet-Inbound          Deny   *     src=VirtualNetwork  dst=*             port=*
+=== Subnet association unchanged ===
+snet-hub-shared -> nsg-hub-lab2
+snet-spoke-workload -> nsg-spoke-lab2
+=== VM power state (expect deallocated) ===
+vm-hub-lab2: VM deallocated
+vm-spoke-lab2: VM deallocated
+

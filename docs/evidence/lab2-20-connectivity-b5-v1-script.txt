@@ -1,0 +1,241 @@
+Lab2 connectivity retest, 2026-10-25 11:01:39
+Starting vm-hub-lab2...
+Starting vm-spoke-lab2...
+=== Power state after start ===
+vm-hub-lab2: VM running
+vm-spoke-lab2: VM running
+=== Effective NSGs on vm-hub-lab2100 (expect ONE entry, associated via subnet) ===
+NSG=nsg-hub-lab2  subnet=snet-hub-shared  nic=
+NSG=  subnet=  nic=
+=== Effective routes on vm-hub-lab2100 (expect a VNetPeering route to the other VNet) ===
+Default  10.20.0.0/16           VnetLocal        Active
+Default  10.21.0.0/16           VNetPeering      Active
+Default  0.0.0.0/0              Internet         Active
+Default  10.0.0.0/8             None             Active
+Default  127.0.0.0/8            None             Active
+Default  100.96.0.0/11          None             Active
+Default  172.16.0.0/12          None             Active
+Default  100.64.0.0/12          None             Active
+Default  25.176.0.0/13          None             Active
+Default  100.80.0.0/13          None             Active
+Default  100.92.0.0/14          None             Active
+Default  25.4.0.0/14            None             Active
+Default  25.184.0.0/14          None             Active
+Default  25.152.0.0/14          None             Active
+Default  198.18.0.0/15          None             Active
+Default  25.148.0.0/15          None             Active
+Default  192.168.0.0/16         None             Active
+Default  104.147.0.0/16         None             Active
+Default  25.159.0.0/16          None             Active
+Default  25.156.0.0/16          None             Active
+Default  157.59.0.0/16          None             Active
+Default  25.150.0.0/16          None             Active
+Default  40.109.0.0/16          None             Active
+Default  104.146.0.0/17         None             Active
+Default  100.91.128.0/17        None             Active
+Default  100.90.0.0/17          None             Active
+Default  100.89.128.0/17        None             Active
+Default  40.108.0.0/17          None             Active
+Default  100.88.128.0/17        None             Active
+Default  100.91.64.0/18         None             Active
+Default  100.90.128.0/18        None             Active
+Default  23.103.0.0/18          None             Active
+Default  100.89.96.0/19         None             Active
+Default  100.88.32.0/19         None             Active
+Default  100.89.32.0/19         None             Active
+Default  100.91.0.0/19          None             Active
+Default  100.90.224.0/19        None             Active
+Default  100.88.64.0/19         None             Active
+Default  100.90.192.0/20        None             Active
+Default  100.89.80.0/20         None             Active
+Default  100.91.48.0/20         None             Active
+Default  100.88.112.0/20        None             Active
+Default  100.88.16.0/20         None             Active
+Default  100.90.208.0/21        None             Active
+Default  100.88.96.0/21         None             Active
+Default  100.89.8.0/21          None             Active
+Default  100.88.8.0/21          None             Active
+Default  100.91.32.0/21         None             Active
+Default  100.89.24.0/21         None             Active
+Default  100.89.72.0/22         None             Active
+Default  100.90.216.0/22        None             Active
+Default  100.91.40.0/22         None             Active
+Default  20.35.252.0/22         None             Active
+Default  100.88.108.0/22        None             Active
+Default  100.88.4.0/22          None             Active
+Default  100.89.4.0/22          None             Active
+Default  100.89.16.0/22         None             Active
+Default  100.89.64.0/22         None             Active
+Default  100.89.20.0/23         None             Active
+Default  100.89.78.0/23         None             Active
+Default  100.90.222.0/23        None             Active
+Default  100.88.104.0/23        None             Active
+Default  100.91.46.0/23         None             Active
+Default  100.89.0.0/23          None             Active
+Default  100.89.70.0/23         None             Active
+Default  100.88.0.0/23          None             Active
+Default  100.88.107.0/24        None             Active
+Default  100.91.44.0/24         None             Active
+Default  100.89.68.0/24         None             Active
+Default  100.89.23.0/24         None             Active
+Default  100.88.2.0/24          None             Active
+Default  100.89.3.0/24          None             Active
+Default  100.89.76.0/24         None             Active
+Default  100.90.220.0/24        None             Active
+Default  100.88.3.128/25        None             Active
+Default  100.89.77.128/25       None             Active
+Default  100.89.2.128/25        None             Active
+Default  100.90.221.0/25        None             Active
+Default  100.88.106.0/25        None             Active
+Default  100.89.69.128/25       None             Active
+Default  100.89.2.0/26          None             Active
+Default  100.88.106.128/26      None             Active
+Default  100.90.221.128/26      None             Active
+Default  100.89.77.0/26         None             Active
+Default  100.88.3.64/26         None             Active
+Default  100.88.3.32/27         None             Active
+Default  100.90.221.224/27      None             Active
+Default  100.89.77.64/27        None             Active
+Default  100.88.106.224/27      None             Active
+Default  100.89.2.64/27         None             Active
+Default  100.89.77.112/28       None             Active
+Default  100.89.77.96/29        None             Active
+=== Effective NSGs on vm-spoke-lab2403 (expect ONE entry, associated via subnet) ===
+NSG=nsg-spoke-lab2  subnet=snet-spoke-workload  nic=
+NSG=  subnet=  nic=
+=== Effective routes on vm-spoke-lab2403 (expect a VNetPeering route to the other VNet) ===
+Default  10.21.0.0/16           VnetLocal        Active
+Default  10.20.0.0/16           VNetPeering      Active
+Default  0.0.0.0/0              Internet         Active
+Default  10.0.0.0/8             None             Active
+Default  127.0.0.0/8            None             Active
+Default  100.96.0.0/11          None             Active
+Default  172.16.0.0/12          None             Active
+Default  100.64.0.0/12          None             Active
+Default  25.176.0.0/13          None             Active
+Default  100.80.0.0/13          None             Active
+Default  100.92.0.0/14          None             Active
+Default  25.4.0.0/14            None             Active
+Default  25.184.0.0/14          None             Active
+Default  25.152.0.0/14          None             Active
+Default  198.18.0.0/15          None             Active
+Default  25.148.0.0/15          None             Active
+Default  192.168.0.0/16         None             Active
+Default  104.147.0.0/16         None             Active
+Default  25.159.0.0/16          None             Active
+Default  25.156.0.0/16          None             Active
+Default  157.59.0.0/16          None             Active
+Default  25.150.0.0/16          None             Active
+Default  40.109.0.0/16          None             Active
+Default  104.146.0.0/17         None             Active
+Default  100.91.128.0/17        None             Active
+Default  100.90.0.0/17          None             Active
+Default  100.89.128.0/17        None             Active
+Default  40.108.0.0/17          None             Active
+Default  100.88.128.0/17        None             Active
+Default  100.91.64.0/18         None             Active
+Default  100.90.128.0/18        None             Active
+Default  23.103.0.0/18          None             Active
+Default  100.89.96.0/19         None             Active
+Default  100.88.32.0/19         None             Active
+Default  100.89.32.0/19         None             Active
+Default  100.91.0.0/19          None             Active
+Default  100.90.224.0/19        None             Active
+Default  100.88.64.0/19         None             Active
+Default  100.90.192.0/20        None             Active
+Default  100.89.80.0/20         None             Active
+Default  100.91.48.0/20         None             Active
+Default  100.88.112.0/20        None             Active
+Default  100.88.16.0/20         None             Active
+Default  100.90.208.0/21        None             Active
+Default  100.88.96.0/21         None             Active
+Default  100.89.8.0/21          None             Active
+Default  100.88.8.0/21          None             Active
+Default  100.91.32.0/21         None             Active
+Default  100.89.24.0/21         None             Active
+Default  100.89.72.0/22         None             Active
+Default  100.90.216.0/22        None             Active
+Default  100.91.40.0/22         None             Active
+Default  20.35.252.0/22         None             Active
+Default  100.88.108.0/22        None             Active
+Default  100.88.4.0/22          None             Active
+Default  100.89.4.0/22          None             Active
+Default  100.89.16.0/22         None             Active
+Default  100.89.64.0/22         None             Active
+Default  100.89.20.0/23         None             Active
+Default  100.89.78.0/23         None             Active
+Default  100.90.222.0/23        None             Active
+Default  100.88.104.0/23        None             Active
+Default  100.91.46.0/23         None             Active
+Default  100.89.0.0/23          None             Active
+Default  100.89.70.0/23         None             Active
+Default  100.88.0.0/23          None             Active
+Default  100.88.107.0/24        None             Active
+Default  100.91.44.0/24         None             Active
+Default  100.89.68.0/24         None             Active
+Default  100.89.23.0/24         None             Active
+Default  100.88.2.0/24          None             Active
+Default  100.89.3.0/24          None             Active
+Default  100.89.76.0/24         None             Active
+Default  100.90.220.0/24        None             Active
+Default  100.88.3.128/25        None             Active
+Default  100.89.77.128/25       None             Active
+Default  100.89.2.128/25        None             Active
+Default  100.90.221.0/25        None             Active
+Default  100.88.106.0/25        None             Active
+Default  100.89.69.128/25       None             Active
+Default  100.89.2.0/26          None             Active
+Default  100.88.106.128/26      None             Active
+Default  100.90.221.128/26      None             Active
+Default  100.89.77.0/26         None             Active
+Default  100.88.3.64/26         None             Active
+Default  100.88.3.32/27         None             Active
+Default  100.90.221.224/27      None             Active
+Default  100.89.77.64/27        None             Active
+Default  100.88.106.224/27      None             Active
+Default  100.89.2.64/27         None             Active
+Default  100.89.77.112/28       None             Active
+Default  100.89.77.96/29        None             Active
+=== From vm-hub-lab2 (10.20.1.4) to 10.21.1.4: ping and TCP 22 (expect success) ===
+Enable succeeded: 
+[stdout]
+PING 10.21.1.4 (10.21.1.4) 56(84) bytes of data.
+64 bytes from 10.21.1.4: icmp_seq=1 ttl=64 time=2.42 ms
+64 bytes from 10.21.1.4: icmp_seq=2 ttl=64 time=1.54 ms
+64 bytes from 10.21.1.4: icmp_seq=3 ttl=64 time=1.72 ms
+64 bytes from 10.21.1.4: icmp_seq=4 ttl=64 time=1.65 ms
+
+--- 10.21.1.4 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 1.544/1.832/2.419/0.344 ms
+nc_exit=0
+
+[stderr]
+Connection to 10.21.1.4 22 port [tcp/ssh] succeeded!
+
+=== From vm-spoke-lab2 (10.21.1.4) to 10.20.1.4: ping and TCP 22 (expect success) ===
+Enable succeeded: 
+[stdout]
+PING 10.20.1.4 (10.20.1.4) 56(84) bytes of data.
+64 bytes from 10.20.1.4: icmp_seq=1 ttl=64 time=2.66 ms
+64 bytes from 10.20.1.4: icmp_seq=2 ttl=64 time=1.84 ms
+64 bytes from 10.20.1.4: icmp_seq=3 ttl=64 time=1.61 ms
+64 bytes from 10.20.1.4: icmp_seq=4 ttl=64 time=1.85 ms
+
+--- 10.20.1.4 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 1.614/1.992/2.660/0.397 ms
+nc_exit=1
+
+[stderr]
+nc: connect to 10.20.1.4 port 22 (tcp) timed out: Operation now in progress
+
+=== IP flow verify: inbound TCP 22 to spoke from hub (expect Allow) ===
+access=Allow  rule=securityRules/Allow-SSH-From-Hub-Shared
+Deallocating vm-hub-lab2...
+Deallocating vm-spoke-lab2...
+=== Final power state (expect VM deallocated) ===
+vm-hub-lab2: VM deallocated
+vm-spoke-lab2: VM deallocated
+Elapsed from start to deallocated: 5.2 min
+

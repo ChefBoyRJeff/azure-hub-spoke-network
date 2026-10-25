@@ -23,12 +23,59 @@ param tags object = {
 }
 
 // ─── NSGs (defaults only; no custom rules) ──────────────────
+// ─── Address plan (single source of truth for VNets and NSG rules) ─
+var hubAddressSpace = '10.20.0.0/16'
+var hubSubnetPrefix = '10.20.1.0/24'
+var spokeAddressSpace = '10.21.0.0/16'
+var spokeSubnetPrefix = '10.21.1.0/24'
+
+// ─── NSGs (FIXED (B.5): least-privilege inbound rules replace defaults-only) ─
 resource nsgHub 'Microsoft.Network/networkSecurityGroups@2025-09-01' = {
   name: 'nsg-hub-lab2'
   location: location
   tags: tags
   properties: {
-    securityRules: []
+    securityRules: [
+      {
+        name: 'Allow-ICMP-From-Spoke'
+        properties: {
+          priority: 100
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Icmp'
+          sourceAddressPrefix: spokeAddressSpace
+          sourcePortRange: '*'
+          destinationAddressPrefix: hubSubnetPrefix
+          destinationPortRange: '*'
+        }
+      }
+      {
+        name: 'Allow-Intra-Subnet'
+        properties: {
+          priority: 120
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: '*'
+          sourceAddressPrefix: hubSubnetPrefix
+          sourcePortRange: '*'
+          destinationAddressPrefix: hubSubnetPrefix
+          destinationPortRange: '*'
+        }
+      }
+      {
+        name: 'Deny-VNet-Inbound'
+        properties: {
+          priority: 4000
+          direction: 'Inbound'
+          access: 'Deny'
+          protocol: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '*'
+        }
+      }
+    ]
   }
 }
 
@@ -37,7 +84,60 @@ resource nsgSpoke 'Microsoft.Network/networkSecurityGroups@2025-09-01' = {
   location: location
   tags: tags
   properties: {
-    securityRules: []
+    securityRules: [
+      {
+        name: 'Allow-SSH-From-Hub-Shared'
+        properties: {
+          priority: 100
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: hubSubnetPrefix
+          sourcePortRange: '*'
+          destinationAddressPrefix: spokeSubnetPrefix
+          destinationPortRange: '22'
+        }
+      }
+      {
+        name: 'Allow-ICMP-From-Hub'
+        properties: {
+          priority: 110
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Icmp'
+          sourceAddressPrefix: hubAddressSpace
+          sourcePortRange: '*'
+          destinationAddressPrefix: spokeSubnetPrefix
+          destinationPortRange: '*'
+        }
+      }
+      {
+        name: 'Allow-Intra-Subnet'
+        properties: {
+          priority: 120
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: '*'
+          sourceAddressPrefix: spokeSubnetPrefix
+          sourcePortRange: '*'
+          destinationAddressPrefix: spokeSubnetPrefix
+          destinationPortRange: '*'
+        }
+      }
+      {
+        name: 'Deny-VNet-Inbound'
+        properties: {
+          priority: 4000
+          direction: 'Inbound'
+          access: 'Deny'
+          protocol: '*'
+          sourceAddressPrefix: 'VirtualNetwork'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '*'
+        }
+      }
+    ]
   }
 }
 
@@ -49,7 +149,7 @@ resource vnetHub 'Microsoft.Network/virtualNetworks@2025-09-01' = {
   properties: {
     addressSpace: {
       addressPrefixes: [
-        '10.20.0.0/16'
+        hubAddressSpace
       ]
     }
     subnets: [
@@ -57,7 +157,7 @@ resource vnetHub 'Microsoft.Network/virtualNetworks@2025-09-01' = {
         name: 'snet-hub-shared'
         properties: {
           addressPrefixes: [
-            '10.20.1.0/24'
+            hubSubnetPrefix
           ]
           defaultOutboundAccess: false
           networkSecurityGroup: {
@@ -76,7 +176,7 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2025-09-01' = {
   properties: {
     addressSpace: {
       addressPrefixes: [
-        '10.21.0.0/16'
+        spokeAddressSpace
       ]
     }
     subnets: [
@@ -84,7 +184,7 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2025-09-01' = {
         name: 'snet-spoke-workload'
         properties: {
           addressPrefixes: [
-            '10.21.1.0/24'
+            spokeSubnetPrefix
           ]
           defaultOutboundAccess: false
           networkSecurityGroup: {
