@@ -113,15 +113,12 @@ resource peeringOnSpoke 'Microsoft.Network/virtualNetworks/virtualNetworkPeering
 }
 
 // ─── NICs ───────────────────────────────────────────────────
-// FINDING: the same NSG is attached to both the subnet and the NIC
+// FIXED (B.1): NSG is applied at the subnet only; the duplicate NIC-level association was removed
 resource nicHub 'Microsoft.Network/networkInterfaces@2025-09-01' = {
   name: 'vm-hub-lab2100'
   location: location
   properties: {
     enableIPForwarding: false
-    networkSecurityGroup: {
-      id: nsgHub.id
-    }
     ipConfigurations: [
       {
         name: 'ipconfig1'
@@ -143,9 +140,6 @@ resource nicSpoke 'Microsoft.Network/networkInterfaces@2025-09-01' = {
   location: location
   properties: {
     enableIPForwarding: false
-    networkSecurityGroup: {
-      id: nsgSpoke.id
-    }
     ipConfigurations: [
       {
         name: 'ipconfig1'

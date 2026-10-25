@@ -1,0 +1,162 @@
+Note: The result may contain false positive predictions (noise).
+You can help us improve the accuracy of the result by opening an issue here: https://aka.ms/WhatIfIssues
+NOTICE! - Want to get What-if without noise? Move to Deployment Stacks What-If https://aka.ms/stackswhatifGA
+
+Resource and property changes are indicated with these symbols:
+  - Delete
+  ~ Modify
+  = Nochange
+  * Ignore
+  x Noeffect
+
+The deployment will update the following scope:
+
+Scope: /subscriptions/<guid>/resourceGroups/RG-HUBSPOKE-VMS
+
+  ~ Microsoft.Network/networkInterfaces/vm-hub-lab2100 [2025-09-01]
+    - kind:                                              "Regular"
+    - properties.allowPort25Out:                         false
+    - properties.auxiliaryMode:                          "None"
+    - properties.auxiliarySku:                           "None"
+    - properties.disableTcpStateTracking:                false
+    - properties.networkSecurityGroup:
+
+        id: "/subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Network/networkSecurityGroups/nsg-hub-lab2"
+
+    ~ properties.ipConfigurations: [
+      ~ 0:
+
+        - properties.privateIPAddressVersion: "IPv4"
+
+      ]
+    x properties.ipConfigurations[0].properties.primary: true
+
+  ~ Microsoft.Network/networkInterfaces/vm-spoke-lab2403 [2025-09-01]
+    - kind:                                              "Regular"
+    - properties.allowPort25Out:                         false
+    - properties.auxiliaryMode:                          "None"
+    - properties.auxiliarySku:                           "None"
+    - properties.disableTcpStateTracking:                false
+    - properties.networkSecurityGroup:
+
+        id: "/subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-lab2"
+
+    ~ properties.ipConfigurations: [
+      ~ 0:
+
+        - properties.privateIPAddressVersion: "IPv4"
+
+      ]
+    x properties.ipConfigurations[0].properties.primary: true
+
+  ~ Microsoft.Network/virtualNetworks/vnet-hub-lab2 [2025-09-01]
+    - properties.encryption:
+
+        enabled:     false
+        enforcement: "AllowUnencrypted"
+
+    - properties.privateEndpointVNetPolicies:    "Disabled"
+    ~ properties.virtualNetworkPeerings: [
+      ~ 0:
+
+        - properties.doNotVerifyRemoteGateways: false
+        - properties.enableOnlyIPv6Peering:     false
+        - properties.peerCompleteVnets:         true
+        - properties.peeringSyncLevel:          "FullyInSync"
+        - properties.remoteAddressSpace:
+
+            addressPrefixes: [
+              0: "10.21.0.0/16"
+            ]
+
+        - properties.remoteVirtualNetworkAddressSpace:
+
+            addressPrefixes: [
+              0: "10.21.0.0/16"
+            ]
+
+
+      ]
+    x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+
+  ~ Microsoft.Network/virtualNetworks/vnet-hub-lab2/virtualNetworkPeerings/peer-spoke-to-hub [2025-09-01]
+    - properties.doNotVerifyRemoteGateways: false
+    - properties.enableOnlyIPv6Peering:     false
+    - properties.peerCompleteVnets:         true
+    - properties.peeringSyncLevel:          "FullyInSync"
+    - properties.remoteAddressSpace:
+
+        addressPrefixes: [
+          0: "10.21.0.0/16"
+        ]
+
+    - properties.remoteVirtualNetworkAddressSpace:
+
+        addressPrefixes: [
+          0: "10.21.0.0/16"
+        ]
+
+
+  ~ Microsoft.Network/virtualNetworks/vnet-spoke-lab2 [2025-09-01]
+    - properties.encryption:
+
+        enabled:     false
+        enforcement: "AllowUnencrypted"
+
+    - properties.privateEndpointVNetPolicies:    "Disabled"
+    ~ properties.virtualNetworkPeerings: [
+      ~ 0:
+
+        - properties.doNotVerifyRemoteGateways: false
+        - properties.enableOnlyIPv6Peering:     false
+        - properties.peerCompleteVnets:         true
+        - properties.peeringSyncLevel:          "FullyInSync"
+        - properties.remoteAddressSpace:
+
+            addressPrefixes: [
+              0: "10.20.0.0/16"
+            ]
+
+        - properties.remoteVirtualNetworkAddressSpace:
+
+            addressPrefixes: [
+              0: "10.20.0.0/16"
+            ]
+
+
+      ]
+    x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+
+  ~ Microsoft.Network/virtualNetworks/vnet-spoke-lab2/virtualNetworkPeerings/peer-hub-to-spoke [2025-09-01]
+    - properties.doNotVerifyRemoteGateways: false
+    - properties.enableOnlyIPv6Peering:     false
+    - properties.peerCompleteVnets:         true
+    - properties.peeringSyncLevel:          "FullyInSync"
+    - properties.remoteAddressSpace:
+
+        addressPrefixes: [
+          0: "10.20.0.0/16"
+        ]
+
+    - properties.remoteVirtualNetworkAddressSpace:
+
+        addressPrefixes: [
+          0: "10.20.0.0/16"
+        ]
+
+
+  = Microsoft.Compute/virtualMachines/vm-hub-lab2 [2026-04-01]
+    x properties.storageProfile.osDisk.managedDisk.storageAccountType: "StandardSSD_LRS"
+
+  = Microsoft.Compute/virtualMachines/vm-spoke-lab2 [2026-04-01]
+    x properties.storageProfile.osDisk.managedDisk.storageAccountType: "StandardSSD_LRS"
+
+  = Microsoft.Network/networkSecurityGroups/nsg-hub-lab2 [2025-09-01]
+  = Microsoft.Network/networkSecurityGroups/nsg-spoke-lab2 [2025-09-01]
+  * Microsoft.Compute/disks/vm-hub-lab2_OsDisk_1_13cb237c47bd480c9f81873eb6d399df
+  * Microsoft.Compute/disks/vm-spoke-lab2_OsDisk_1_21494d66c3b54adfaa7db655958f229f
+  * Microsoft.Compute/sshPublicKeys/key-vm-hub-lab2
+  * Microsoft.Compute/sshPublicKeys/key-vm-spoke-lab2
+
+Resource changes: 6 to modify, 4 no change, 4 to ignore.
+

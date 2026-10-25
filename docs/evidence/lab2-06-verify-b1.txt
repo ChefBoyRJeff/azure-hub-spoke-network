@@ -1,0 +1,17 @@
+=== AFTER B.1: NIC NSG associations (expect empty) ===
+vm-hub-lab2100 -> []
+vm-spoke-lab2403 -> []
+=== Subnet NSG associations (expect still attached) ===
+snet-hub-shared -> /subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Network/networkSecurityGroups/nsg-hub-lab2
+snet-spoke-workload -> /subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-lab2
+=== Peerings (expect Connected / FullyInSync) ===
+Name               State      Sync
+-----------------  ---------  -----------
+peer-spoke-to-hub  Connected  FullyInSync
+Name               State      Sync
+-----------------  ---------  -----------
+peer-hub-to-spoke  Connected  FullyInSync
+=== VM power state (expect deallocated) ===
+vm-hub-lab2: VM deallocated
+vm-spoke-lab2: VM deallocated
+

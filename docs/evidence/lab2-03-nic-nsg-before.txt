@@ -1,0 +1,4 @@
+=== BEFORE B.1: NIC NSG associations ===
+vm-hub-lab2100 -> /subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Network/networkSecurityGroups/nsg-hub-lab2
+vm-spoke-lab2403 -> /subscriptions/<guid>/resourceGroups/rg-hubspoke-vms/providers/Microsoft.Network/networkSecurityGroups/nsg-spoke-lab2
+
