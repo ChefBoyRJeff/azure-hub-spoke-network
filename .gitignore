@@ -8,3 +8,6 @@
 # OS and editor clutter
 .DS_Store
 .vscode/
+
+# Raw portal exports (reference only, not committed)
+lab2/export/

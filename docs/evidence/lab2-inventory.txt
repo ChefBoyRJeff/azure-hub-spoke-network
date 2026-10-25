@@ -1,0 +1,71 @@
+=== Resources in rg-hubspoke-vms ===
+Name
+-------------------------------------------------------
+vnet-hub-lab2
+vnet-spoke-lab2
+nsg-spoke-lab2
+nsg-hub-lab2
+key-vm-hub-lab2
+vm-hub-lab2100
+vm-hub-lab2
+vm-hub-lab2_OsDisk_1_13cb237c47bd480c9f81873eb6d399df
+key-vm-spoke-lab2
+vm-spoke-lab2403
+vm-spoke-lab2
+vm-spoke-lab2_OsDisk_1_21494d66c3b54adfaa7db655958f229f
+=== Resources in rg-hubspoke-lab (original Bicep network) ===
+Name
+-------------------
+vnet-hub
+nsg-spoke1-workload
+rt-spoke1-workload
+vnet-spoke1
+nsg-spoke2-workload
+rt-spoke2-workload
+vnet-spoke2
+=== lab2 VNets ===
+] was unexpected at this time.
+ConvertFrom-Json: 
+Line |
+   7 |  … et list --query "[?contains(name,'lab2')]" -o json | ConvertFrom-Json
+     |                                                         ~~~~~~~~~~~~~~~~
+     | Conversion from JSON failed with error: Unexpected character encountered while parsing value: D. Path '', line 0, position 0.
+ | RG:  |  | subnets: =
+=== lab2 peerings ===
+ERROR: argument --resource-group/-g: expected one argument
+
+Examples from command's help:
+az network vnet peering list -g MyResourceGroup --vnet-name MyVnet1
+List all peerings of a specified virtual network.
+
+https://aka.ms/cli_ref
+Read more about the command in reference docs
+=== lab2 NSG custom rules ===
+] was unexpected at this time.
+ConvertFrom-Json: 
+Line |
+  12 |  … --query "[?contains(name,'lab2')]" -o json | ConvertFrom-Json | ForEa …
+     |                                                 ~~~~~~~~~~~~~~~~
+     | Conversion from JSON failed with error: Unexpected character encountered while parsing value: D. Path '', line 0, position 0.
+=== Disks ===
+Name                                                     Sku              State
+-------------------------------------------------------  ---------------  --------
+vm-hub-lab2_OsDisk_1_13cb237c47bd480c9f81873eb6d399df    StandardSSD_LRS  Reserved
+vm-spoke-lab2_OsDisk_1_21494d66c3b54adfaa7db655958f229f  StandardSSD_LRS  Reserved
+=== Public IPs (whole subscription) ===
+
+=== lab2 VNets ===
+vnet-hub-lab2 | 10.20.0.0/16 | subnets: snet-hub-shared= nsg=nsg-hub-lab2
+vnet-spoke-lab2 | 10.21.0.0/16 | subnets: snet-spoke-workload= nsg=nsg-spoke-lab2
+=== lab2 peerings ===
+vnet-hub-lab2 -> peer-spoke-to-hub | state=Connected | allowForwardedTraffic=False
+vnet-spoke-lab2 -> peer-hub-to-spoke | state=Connected | allowForwardedTraffic=False
+=== lab2 NSG custom rules ===
+--- nsg-hub-lab2 ---
+(no custom rules; defaults only)
+--- nsg-spoke-lab2 ---
+(no custom rules; defaults only)
+=== NICs ===
+vm-hub-lab2100 | ip=10.20.1.4 | ipForwarding=False | nicNsg=nsg-hub-lab2
+vm-spoke-lab2403 | ip=10.21.1.4 | ipForwarding=False | nicNsg=nsg-spoke-lab2
+

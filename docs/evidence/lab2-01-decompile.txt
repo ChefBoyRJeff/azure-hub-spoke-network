@@ -1,0 +1,44 @@
+WARNING: D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(59,22) : Warning adminusername-should-not-be-literal: Property 'adminUserName' should not use a literal value. Use a param instead. Found literal string value "azureadmin" [https://aka.ms/bicep/linter-diagnostics#adminusername-should-not-be-literal]
+WARNING: D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(134,22) : Warning adminusername-should-not-be-literal: Property 'adminUserName' should not use a literal value. Use a param instead. Found literal string value "azureadmin" [https://aka.ms/bicep/linter-diagnostics#adminusername-should-not-be-literal]
+ERROR: WARNING: Decompilation is a best-effort process, as there is no guaranteed mapping from ARM JSON to Bicep Template or Bicep Parameters.
+
+You may need to fix warnings and errors in the generated bicep/bicepparam file(s), or decompilation may fail entirely if an accurate conversion is not possible.
+
+If you would like to report any issues or inaccurate conversions, please see https://github.com/Azure/bicep/issues.
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(51,15) : Error BCP062: The referenced declaration with name "vm_hub_lab2100" is not valid. [https://aka.ms/bicep/core-diagnostics#BCP062]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(126,15) : Error BCP062: The referenced declaration with name "vm_spoke_lab2403" is not valid. [https://aka.ms/bicep/core-diagnostics#BCP062]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(197,16) : Error BCP079: This expression is referencing its own declaration, which is not allowed. [https://aka.ms/bicep/core-diagnostics#BCP079]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(205,17) : Error BCP062: The referenced declaration with name "vnet_hub_lab2_snet_hub_shared" is not valid. [https://aka.ms/bicep/core-diagnostics#BCP062]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(231,16) : Error BCP079: This expression is referencing its own declaration, which is not allowed. [https://aka.ms/bicep/core-diagnostics#BCP079]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(239,17) : Error BCP062: The referenced declaration with name "vnet_spoke_lab2_snet_spoke_workload" is not valid. [https://aka.ms/bicep/core-diagnostics#BCP062]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(268,13) : Error BCP080: The expression is involved in a cycle ("vnet_hub_lab2_snet_hub_shared" -> "vnet_hub_lab2"). [https://aka.ms/bicep/core-diagnostics#BCP080]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(286,13) : Error BCP080: The expression is involved in a cycle ("vnet_hub_lab2_peer_spoke_to_hub" -> "vnet_hub_lab2"). [https://aka.ms/bicep/core-diagnostics#BCP080]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(303,17) : Error BCP062: The referenced declaration with name "vnet_spoke_lab2" is not valid. [https://aka.ms/bicep/core-diagnostics#BCP062]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(334,13) : Error BCP080: The expression is involved in a cycle ("vnet_spoke_lab2_snet_spoke_workload" -> "vnet_spoke_lab2"). [https://aka.ms/bicep/core-diagnostics#BCP080]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(352,13) : Error BCP080: The expression is involved in a cycle ("vnet_spoke_lab2_peer_hub_to_spoke" -> "vnet_spoke_lab2"). [https://aka.ms/bicep/core-diagnostics#BCP080]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(369,17) : Error BCP062: The referenced declaration with name "vnet_hub_lab2" is not valid. [https://aka.ms/bicep/core-diagnostics#BCP062]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(398,5) : Error BCP080: The expression is involved in a cycle ("vnet_hub_lab2" -> "vnet_hub_lab2_snet_hub_shared"). [https://aka.ms/bicep/core-diagnostics#BCP080]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(417,5) : Error BCP080: The expression is involved in a cycle ("vnet_spoke_lab2" -> "vnet_spoke_lab2_snet_spoke_workload"). [https://aka.ms/bicep/core-diagnostics#BCP080]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(438,11) : Error BCP062: The referenced declaration with name "vnet_spoke_lab2" is not valid. [https://aka.ms/bicep/core-diagnostics#BCP062]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(448,5) : Error BCP062: The referenced declaration with name "vnet_hub_lab2" is not valid. [https://aka.ms/bicep/core-diagnostics#BCP062]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(469,11) : Error BCP062: The referenced declaration with name "vnet_hub_lab2" is not valid. [https://aka.ms/bicep/core-diagnostics#BCP062]
+
+D:\Development\azure-hub-spoke-network\lab2\export\template.bicep(479,5) : Error BCP062: The referenced declaration with name "vnet_spoke_lab2" is not valid. [https://aka.ms/bicep/core-diagnostics#BCP062]
+
