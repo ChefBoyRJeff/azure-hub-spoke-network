@@ -1,5 +1,5 @@
 // Lab 2: portal-built hub-and-spoke connectivity lab, codified from an exported template.
-// Step A: describes the deployed state AS-IS, including known findings (marked FINDING).
+// Step B applied: all three findings fixed (see FIXED comments). Evidence: docs/evidence/lab2-*.txt
 
 @description('Region for all lab2 resources')
 param location string = resourceGroup().location
@@ -96,10 +96,10 @@ resource vnetSpoke 'Microsoft.Network/virtualNetworks@2025-09-01' = {
   }
 }
 
-// FINDING: peering names are swapped (the hub-side peering is named "spoke-to-hub")
+// FIXED (B.3): peering names now describe direction from the VNet they live on
 resource peeringOnHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2025-09-01' = {
   parent: vnetHub
-  name: 'peer-spoke-to-hub'
+  name: 'peer-hub-to-spoke'
   properties: {
     remoteVirtualNetwork: {
       id: vnetSpoke.id
@@ -113,7 +113,7 @@ resource peeringOnHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@
 
 resource peeringOnSpoke 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2025-09-01' = {
   parent: vnetSpoke
-  name: 'peer-hub-to-spoke'
+  name: 'peer-spoke-to-hub'
   properties: {
     remoteVirtualNetwork: {
       id: vnetHub.id

@@ -1,0 +1,10 @@
+Lab2 B.3 peering deletion, 2026-10-25 10:15
+deleted hub-side peer-spoke-to-hub (exit 0)
+=== After deleting the hub side (expect spoke side Disconnected) ===
+on vnet-hub-lab2 : (no peerings)
+on vnet-spoke-lab2  name=peer-hub-to-spoke  state=Disconnected
+deleted spoke-side peer-hub-to-spoke (exit 0)
+=== After deleting both (expect none) ===
+on vnet-hub-lab2 : (no peerings)
+on vnet-spoke-lab2 : (no peerings)
+

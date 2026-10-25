@@ -1,0 +1,4 @@
+=== Peerings after the failed deployment ===
+on vnet-hub-lab2    name=peer-spoke-to-hub  state=Connected sync=FullyInSync provisioning=Succeeded
+on vnet-spoke-lab2  name=peer-hub-to-spoke  state=Connected sync=FullyInSync provisioning=Succeeded
+

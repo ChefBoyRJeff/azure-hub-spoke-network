@@ -1,0 +1,9 @@
+=== AFTER B.3: peerings (expect correct names, Connected / FullyInSync) ===
+on vnet-hub-lab2    name=peer-hub-to-spoke  remote=vnet-spoke-lab2  state=Connected sync=FullyInSync vnetAccess=True fwd=False
+on vnet-spoke-lab2  name=peer-spoke-to-hub  remote=vnet-hub-lab2    state=Connected sync=FullyInSync vnetAccess=True fwd=False
+=== VM power state (expect deallocated) ===
+vm-hub-lab2: VM deallocated
+vm-spoke-lab2: VM deallocated
+=== Drift check: what-if after deploy (expect 0 to create, 0 to delete) ===
+Resource changes: 6 to modify, 4 no change, 4 to ignore.
+

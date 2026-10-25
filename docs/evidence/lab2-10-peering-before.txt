@@ -1,0 +1,6 @@
+=== BEFORE B.3: peerings (names swapped) ===
+on vnet-hub-lab2    name=peer-spoke-to-hub  remote=vnet-spoke-lab2  state=Connected sync=FullyInSync vnetAccess=True fwd=False
+on vnet-spoke-lab2  name=peer-hub-to-spoke  remote=vnet-hub-lab2    state=Connected sync=FullyInSync vnetAccess=True fwd=False
+vm-hub-lab2: VM deallocated
+vm-spoke-lab2: VM deallocated
+
