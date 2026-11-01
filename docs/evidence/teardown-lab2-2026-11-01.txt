@@ -1,0 +1,6 @@
+=== P1 teardown of rg-hubspoke-vms (Lab 2 VMs + lab2 VNets; approved 2026-11-01). rg-hubspoke-lab kept. ===
+2026-11-01T22:27:25Z  peerings from rg-hubspoke-lab into rg-hubspoke-vms: 0
+2026-11-01T22:27:27Z  rg-hubspoke-lab resources before: 7
+2026-11-01T22:31:32Z  group delete rg-hubspoke-vms exit=0
+2026-11-01T22:31:34Z  rg-hubspoke-vms exists: false
+2026-11-01T22:31:36Z  rg-hubspoke-lab resources after: 7 (expect 7)
