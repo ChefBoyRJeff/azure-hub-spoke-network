@@ -7,6 +7,8 @@ A hub-and-spoke virtual network topology on Microsoft Azure, deployed as Infrast
 
 Built as a hands-on project while studying for the **AZ-104: Microsoft Azure Administrator** certification. Everything here is lab work in a personal subscription, not a production environment.
 
+> **Status (2026-11-01):** Lab 1's network is still deployed in `rg-hubspoke-lab` at $0. **Lab 2 was torn down** on 2026-11-01 ([evidence](docs/evidence/teardown-lab2-2026-11-01.txt)); all of its evidence is kept in this repo, and it can be rebuilt from `lab2/main.bicep` (see [Rebuilding Lab 2](#rebuilding-lab-2)). Before teardown, the Lab 2 VMs were also used as the monitored workload in Project 2 (Azure Monitoring and Incident Response) and as the protected workload in Project 5 (Azure Backup and Recovery Lab). Interview prep: [`docs/interview-guide.md`](docs/interview-guide.md).
+
 ## Problem It Solves
 
 As organizations grow in Azure, putting every workload in one flat network becomes hard to secure and manage. The hub-and-spoke model solves this by:
@@ -63,7 +65,9 @@ Usable IPs account for the 5 addresses Azure reserves in every subnet. No addres
 │   ├── main.bicep                # Lab 2: portal-built environment codified as Bicep (findings fixed)
 │   ├── Test-Lab2Connectivity.ps1 # Lab 2: connectivity test matrix (PASS/FAIL); deallocates in finally
 │   └── export/                   # Raw portal export + decompiled output (gitignored; reference only)
-└── docs/evidence/                # Sanitized command output for every milestone (m1-*, m2-*, lab2-*)
+└── docs/
+    ├── evidence/                 # Sanitized command output for every milestone (m1-*, m2-*, lab2-*, teardown)
+    └── interview-guide.md        # Walkthrough, deep-dive outline, likely questions, practice challenges
 ```
 
 Compiled ARM JSON (`*.json`) and raw portal exports are gitignored. Subscription and tenant IDs in evidence files are replaced with `<guid>`.
@@ -122,7 +126,7 @@ Guardrails were put in place **before** deploying anything:
 
 **Lab 1 running cost: $0.** VNets, subnets, NSGs, route tables, and peering with no traffic are free.
 
-**Lab 2 running cost:** the VMs are kept **deallocated**, so there's no compute charge. The two StandardSSD OS disks still bill while deallocated, at **about $5/month combined (estimate)**. See [Lab 2 cost and preservation](#cost-and-preservation-policy).
+**Lab 2 running cost: $0 since 2026-11-01** (torn down). While it existed, the VMs were kept **deallocated**, so the only charge was the two StandardSSD OS disks, at **about $5/month combined (estimate)**. See [Lab 2 cost and preservation](#cost-and-preservation-policy).
 
 ## Deploy It Yourself (Lab 1)
 
@@ -192,7 +196,7 @@ flowchart LR
 | **Standard_B1s, SSH key only** | Lowest-cost size available on this subscription (Basv2 quota is 0). Password authentication is disabled. Private keys stay on the local machine and are never in this repository |
 | **VMs stay deallocated between sessions** | Removes compute cost while keeping the lab for reuse |
 
-All Lab 2 resources live in `rg-hubspoke-vms` and carry the tag `lab=lab2`.
+All Lab 2 resources lived in `rg-hubspoke-vms` and carried the tag `lab=lab2`. The resource group was deleted on 2026-11-01.
 
 ### Step A: From Portal to Code
 
@@ -315,16 +319,23 @@ A blocked TCP test passes **only on a timeout**. An NSG deny silently drops pack
 
 **Lesson:** `finally` makes cleanup the default, but cleanup can be interrupted too. A safety mechanism should be verified, and it shouldn't be the only one.
 
-### Re-Running Lab 2
+### Rebuilding Lab 2
+
+Lab 2 was deleted on 2026-11-01, including its SSH public key resources, so the original keys can't be read back from Azure. A rebuild uses a **new key pair**. `lab2/main.bicep` creates every resource from scratch (the OS disks use `createOption: 'FromImage'`), so it's expected to work as a fresh deployment. **This hasn't been tested yet**; run what-if first and expect about 12 creates.
 
 ```powershell
-# Read the existing SSH public keys from Azure (no keys are pasted or stored in the repo)
-$hubKey   = az sshkey show -g rg-hubspoke-vms -n key-vm-hub-lab2   --query publicKey -o tsv
-$spokeKey = az sshkey show -g rg-hubspoke-vms -n key-vm-spoke-lab2 --query publicKey -o tsv
+# New SSH key pair (the private key stays in your profile; never commit it)
+ssh-keygen -t rsa -b 4096 -f $HOME\.ssh\lab2 -N '""'
+$key = Get-Content $HOME\.ssh\lab2.pub -Raw
 
-# Drift check: expect 0 to create and 0 to delete (remaining "modify" lines are known noise)
+az group create -n rg-hubspoke-vms -l eastus
 az deployment group what-if -g rg-hubspoke-vms --template-file lab2\main.bicep `
-  --parameters hubSshPublicKey="$hubKey" spokeSshPublicKey="$spokeKey"
+  --parameters hubSshPublicKey="$key" spokeSshPublicKey="$key"
+az deployment group create  -g rg-hubspoke-vms --template-file lab2\main.bicep `
+  --parameters hubSshPublicKey="$key" spokeSshPublicKey="$key"
+
+# Deallocate immediately: the VMs start on creation
+az vm deallocate --ids $(az vm list -g rg-hubspoke-vms --query "[].id" -o tsv)
 
 # Test matrix (billable for a few minutes; deallocates at the end). Use a new file name each run.
 .\lab2\Test-Lab2Connectivity.ps1 -OutFile docs\evidence\lab2-NN-connectivity-matrix.txt
@@ -333,7 +344,7 @@ az deployment group what-if -g rg-hubspoke-vms --template-file lab2\main.bicep `
 az vm list -d -g rg-hubspoke-vms --query "[].{name:name,power:powerState}" -o table
 ```
 
-The template targets the existing environment. The OS disk names and SSH keys must match what's deployed, so it isn't meant for a fresh deployment as written.
+**Note:** Project 2's alert rules targeted these VMs and were deleted after the teardown. Redeploy Project 2's Bicep after rebuilding if you want the alerts back.
 
 ### Evidence Index
 
@@ -352,17 +363,18 @@ The template targets the existing environment. The OS disk names and SSH keys mu
 | `lab2-20-connectivity-b5-v1-script.txt` | B.5 traffic run with the v1 script (its "expect success" heading predates B.5) |
 | `lab2-21-connectivity-matrix-b5.txt` | B.5 test matrix: 8 of 8 PASS |
 | `lab2-21-...-effective-nsg-raw.txt` | Raw effective-NSG JSON, including the security admin rule |
+| `teardown-lab2-2026-11-01.txt` | Teardown: peering safety check, resource group deletion, Lab 1 network unchanged (7 resources before and after) |
 
 ### Cost and Preservation Policy
 
 | Item | Policy |
 |---|---|
-| VMs | Kept **deallocated**. Started only for tests, through the retest script that always deallocates |
-| OS disks | Bill while deallocated, about **$5/month combined (estimate)**. Kept so the lab can be reused |
+| VMs | Were kept **deallocated** and started only for tests, through the retest script that always deallocates. **Deleted 2026-11-01** |
+| OS disks | Billed while deallocated, about **$5/month combined (estimate)**. Kept for reuse by Projects 2 and 5, then **deleted 2026-11-01** |
 | Retest cost | About 5 minutes of two B1s VMs (under $0.01) |
 | Not used | Public IPs, Bastion, NAT gateway, paid monitoring, Azure Backup, Site Recovery |
 
-**Full teardown (only when Lab 2 is no longer needed):**
+**Full teardown** (done on 2026-11-01, after a check that no `rg-hubspoke-lab` VNet peered into this group; see [evidence](docs/evidence/teardown-lab2-2026-11-01.txt)):
 
 ```bash
 az group delete --name rg-hubspoke-vms --yes
@@ -375,7 +387,7 @@ az group delete --name rg-hubspoke-vms --yes
 - **Cleanup can be interrupted.** The test script deallocates in `finally`, but an interrupted run once left a VM running (see the incident). Auto-shutdown isn't configured yet.
 - **ICMP and TCP only.** UDP wasn't tested, and IP flow verify doesn't test ICMP.
 - **Disk and SSH key tags are outside Bicep.** What-if won't detect them being removed. Azure Policy is the intended control.
-- **`lab2/main.bicep` describes the existing environment.** It pins OS disk names and uses existing keys, so it isn't a template for a fresh deployment.
+- **`lab2/main.bicep` was written to describe the existing environment.** It pins the original OS disk names and takes SSH keys as parameters. A fresh rebuild is expected to work with a new key pair (see [Rebuilding Lab 2](#rebuilding-lab-2)) but hasn't been tested since the teardown.
 - **The rename needed an imperative step.** Incremental mode can't delete. Complete mode or deployment stacks could, but they would need careful scoping in a resource group shared with other work.
 - **The security admin rule's origin is unconfirmed.** It appears to be platform-applied. Its effect (outbound IPv6 only) was read from the raw JSON, not tested.
 - **No flow logs or monitoring** were enabled (cost). They're planned in the monitoring project.
@@ -417,5 +429,6 @@ az group delete --name rg-hubspoke-vms --yes
 - Enforce required tags with Azure Policy instead of tagging disks by hand
 - Add a GitHub Actions workflow that runs `what-if` on pull requests
 - Move the address plan into a `.bicepparam` file for per-environment deployments
-- Deploy the `vms.bicep` VM layer to demonstrate spoke-to-spoke routing through the hub NVA and IP forwarding
+- Deploy the `vms.bicep` VM layer to demonstrate spoke-to-spoke routing through the hub NVA and IP forwarding, then **deliberately break a route** (for example, IP forwarding off on the NVA, or a wrong next hop), diagnose it with effective routes and Network Watcher, and fix it through code. This is the one roadmap scenario not yet done: Lab 2 broke NSGs and peering, not routes
+- Test a fresh rebuild of Lab 2 from `lab2/main.bicep` and record it as evidence
 - Separate the Lab 2 and `vms.bicep` resource groups so each lab can be torn down independently (also a chance to practice moving resources between resource groups)
