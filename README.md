@@ -8,7 +8,7 @@ A hub-and-spoke virtual network topology on Microsoft Azure, deployed as Infrast
 
 Built as a hands-on project while studying for the **AZ-104: Microsoft Azure Administrator** certification. Everything here is lab work in a personal subscription, not a production environment.
 
-> **Status (2026-11-05):** Lab 1's network is still deployed in `rg-hubspoke-lab` at $0, now including the two NSG rules from Lab 3. **Lab 3 was torn down** the same day it ran ([evidence](docs/evidence/lab3-06-teardown.txt)). **Lab 2 was torn down** on 2026-11-01 ([evidence](docs/evidence/teardown-lab2-2026-11-01.txt)); all of its evidence is kept in this repo, and it can be rebuilt from `lab2/main.bicep` (see [Rebuilding Lab 2](#rebuilding-lab-2)). Before teardown, the Lab 2 VMs were also used as the monitored workload in Project 2 (Azure Monitoring and Incident Response) and as the protected workload in Project 5 (Azure Backup and Recovery Lab). Interview prep: [`docs/interview-guide.md`](docs/interview-guide.md).
+> **Status (2026-11-05):** Lab 1's network is still deployed in `rg-hubspoke-lab` at $0, now including the two NSG rules from Lab 3 and a storage service endpoint on the spokes (from Project 2 Lab 4; see [Routing Design](#routing-design)). **Lab 3 was torn down** the same day it ran ([evidence](docs/evidence/lab3-06-teardown.txt)). **Lab 2 was torn down** on 2026-11-01 ([evidence](docs/evidence/teardown-lab2-2026-11-01.txt)); all of its evidence is kept in this repo, and it can be rebuilt from `lab2/main.bicep` (see [Rebuilding Lab 2](#rebuilding-lab-2)). Before teardown, the Lab 2 VMs were also used as the monitored workload in Project 2 (Azure Monitoring and Incident Response) and as the protected workload in Project 5 (Azure Backup and Recovery Lab). Interview prep: [`docs/interview-guide.md`](docs/interview-guide.md).
 
 ## Problem It Solves
 
@@ -121,6 +121,14 @@ Rules 115 and 3900 were added in Lab 3 (see [why](#incident-1-health-probes-at-0
 Each spoke has a user-defined route sending all egress (`0.0.0.0/0`) to `10.0.1.4` in the hub, where a firewall or network virtual appliance (NVA) would inspect traffic. Peering is **not transitive**, so this pattern is also how spoke1 and spoke2 would reach each other: through the hub NVA rather than a direct peering.
 
 > **Note:** No NVA is deployed yet, to keep costs at $0. The routes show the design intent. `vms.bicep` defines a `vm-nva` at 10.0.1.4 (IP forwarding off by default) for a future routing scenario.
+
+**Side effect, found in Project 2 Lab 4 (2026-11-05):** with no appliance at 10.0.1.4, the `0.0.0.0/0` route **blackholes** everything leaving the spoke for a public IP, including Azure Storage. Next hop reports `None`. A Network Watcher packet capture on a spoke VM failed with `InternalServerError` because the VM's agent couldn't upload to storage; the same capture on the hub VM, which has no route table, worked.
+
+**Fix in code:** `modules/spoke.bicep` now adds a **`Microsoft.Storage` service endpoint** to each spoke's workload subnet. That adds routes for the region's storage address ranges with next hop `VirtualNetworkServiceEndpoint`. They're more specific than `0.0.0.0/0`, so they win. After the deploy, storage from the spoke went from a timeout to HTTP 400 (reachable), and the capture uploaded. The fix is free.
+- **Trade-off:** storage traffic bypasses the future hub firewall. A private endpoint would be the stricter choice.
+- **Live difference:** Azure added `westus` and `westus3` to the endpoint's locations by itself. What-if marks this as no effect.
+
+Evidence and the full investigation are in the [monitoring repo's Lab 4 section](https://github.com/ChefBoyRJeff/azure-monitoring-incident-response#lab-4-network-watcher).
 
 ## Cost Controls
 

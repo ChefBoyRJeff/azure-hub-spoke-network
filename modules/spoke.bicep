@@ -169,6 +169,17 @@ resource vnet 'Microsoft.Network/virtualNetworks@2026-01-01' = {
           routeTable: {
             id: routeTable.id
           }
+          // Lab 4: storage in this region bypasses the 0.0.0.0/0 -> NVA route (no NVA is deployed,
+          // so that route drops storage traffic). Free; traffic stays on the Azure backbone.
+          // Trade-off: storage traffic is not inspected by a future hub firewall.
+          serviceEndpoints: [
+            {
+              service: 'Microsoft.Storage'
+              locations: [
+                location
+              ]
+            }
+          ]
         }
       }
     ]
