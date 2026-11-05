@@ -1,14 +1,15 @@
 # Azure Hub-and-Spoke Network (Bicep)
 
-A hub-and-spoke virtual network topology on Microsoft Azure, deployed as Infrastructure as Code with Bicep. The repository has three labs:
+A hub-and-spoke virtual network topology on Microsoft Azure, deployed as Infrastructure as Code with Bicep. The repository has four labs:
 
 - **Lab 1: Bicep-first network.** A reusable spoke module deploys multiple isolated spokes from a single array, with least-privilege NSGs and forced routing through the hub.
 - **Lab 2: Portal-built connectivity validation.** A small hub-and-spoke environment was built by hand in the Azure portal, then exported, decompiled, and cleaned up into Bicep. Its configuration findings were fixed through code, and connectivity was verified with real traffic tests. See [Lab 2](#lab-2-portal-built-connectivity-validation).
 - **Lab 3: Internal load balancer and Azure Bastion.** Two web VMs in spoke1 behind an internal Standard Load Balancer, a measured failover test, and Bastion access to VMs in the hub and in a peered spoke. Two NSG fixes found during the lab went back into the Lab 1 code. See [Lab 3](#lab-3-internal-load-balancer-and-azure-bastion).
+- **Lab 5: Azure DNS.** A private zone with auto-registration and resolution-only links, manual records, a controlled "link removed" incident, and a public zone queried directly against Azure's name servers. See [Lab 5](#lab-5-azure-dns).
 
 Built as a hands-on project while studying for the **AZ-104: Microsoft Azure Administrator** certification. Everything here is lab work in a personal subscription, not a production environment.
 
-> **Status (2026-11-05):** Lab 1's network is still deployed in `rg-hubspoke-lab` at $0, now including the two NSG rules from Lab 3 and a storage service endpoint on the spokes (from Project 2 Lab 4; see [Routing Design](#routing-design)). **Lab 3 was torn down** the same day it ran ([evidence](docs/evidence/lab3-06-teardown.txt)). **Lab 2 was torn down** on 2026-11-01 ([evidence](docs/evidence/teardown-lab2-2026-11-01.txt)); all of its evidence is kept in this repo, and it can be rebuilt from `lab2/main.bicep` (see [Rebuilding Lab 2](#rebuilding-lab-2)). Before teardown, the Lab 2 VMs were also used as the monitored workload in Project 2 (Azure Monitoring and Incident Response) and as the protected workload in Project 5 (Azure Backup and Recovery Lab). Interview prep: [`docs/interview-guide.md`](docs/interview-guide.md).
+> **Status (2026-11-05):** Lab 1's network is still deployed in `rg-hubspoke-lab` at $0, now including the two NSG rules from Lab 3 and a storage service endpoint on the spokes (from Project 2 Lab 4; see [Routing Design](#routing-design)). **Labs 3 and 5 were torn down** the same day they ran ([evidence](docs/evidence/lab3-06-teardown.txt)). **Lab 2 was torn down** on 2026-11-01 ([evidence](docs/evidence/teardown-lab2-2026-11-01.txt)); all of its evidence is kept in this repo, and it can be rebuilt from `lab2/main.bicep` (see [Rebuilding Lab 2](#rebuilding-lab-2)). Before teardown, the Lab 2 VMs were also used as the monitored workload in Project 2 (Azure Monitoring and Incident Response) and as the protected workload in Project 5 (Azure Backup and Recovery Lab). Interview prep: [`docs/interview-guide.md`](docs/interview-guide.md).
 
 ## Problem It Solves
 
@@ -64,12 +65,14 @@ Usable IPs account for the 5 addresses Azure reserves in every subnet. No addres
 ├── vms.bicep                     # Lab 1 VM layer: three B1s VMs (authored and what-if reviewed; not yet deployed)
 ├── lab3/
 │   └── lb.bicep                  # Lab 3: the portal-built internal load balancer + backend NICs, as code (what-if only)
+├── lab5/
+│   └── dns.bicep                 # Lab 5: private + public DNS zones, VNet links, records (what-if NoChange)
 ├── lab2/
 │   ├── main.bicep                # Lab 2: portal-built environment codified as Bicep (findings fixed)
 │   ├── Test-Lab2Connectivity.ps1 # Lab 2: connectivity test matrix (PASS/FAIL); deallocates in finally
 │   └── export/                   # Raw portal export + decompiled output (gitignored; reference only)
 └── docs/
-    ├── evidence/                 # Sanitized command output for every milestone (m1-*, m2-*, lab2-*, lab3-*, teardown)
+    ├── evidence/                 # Sanitized command output for every milestone (m1-*, m2-*, lab2-*, lab3-*, lab5-*, teardown)
     └── interview-guide.md        # Walkthrough, deep-dive outline, likely questions, practice challenges
 ```
 
@@ -550,6 +553,126 @@ All resources ran for roughly 3 hours: three D2als_v6 VMs, about 1 hour of Basti
 
 ---
 
+## Lab 5: Azure DNS
+
+**Date:** 2026-11-05 · **Status:** completed, verified, torn down the same day · **Resource group:** `rg-dns-lab` (zones, links, VMs), using the Lab 1 VNets
+
+### Why This Lab Exists
+
+Azure-provided DNS (168.63.129.16) resolves VM names **only inside the same VNet**. Peering doesn't share names, so a hub VM can't reach a spoke VM by name. **Private DNS zones** solve that through **VNet links**. Name resolution is also the first suspect in most connectivity tickets, so the lab includes an incident: a deleted link, and how to prove it from the DNS answer itself. A **public zone** covers the other half of Azure DNS: records the internet can query, and what delegation means.
+
+### Architecture
+
+```mermaid
+flowchart LR
+  subgraph HUB["vnet-hub"]
+    H["vm-dns-hub 10.0.1.30"]
+  end
+  subgraph S1["vnet-spoke1"]
+    S["vm-dns-spoke1 10.1.1.30"]
+  end
+  subgraph PZ["Private zone hubspoke.internal"]
+    R1["vm-dns-hub A 10.0.1.30<br/>(auto-registered, TTL 10)"]
+    R2["vm-dns-spoke1 A 10.1.1.30<br/>(manual, TTL 300)"]
+    R3["app CNAME -> vm-dns-spoke1"]
+  end
+  HUB -->|"link-hub: registration ON"| PZ
+  S1 -->|"link-spoke1: resolution only"| PZ
+  HUB <-->|"peering (does not share names)"| S1
+  subgraph PUB["Public zone hubspoke-7m2p9q.com (not delegated)"]
+    W["www A 203.0.113.10 · app CNAME www · @ TXT"]
+  end
+  PC["Admin PC"] -->|"Resolve-DnsName -Server ns1-01.azure-dns.com"| PUB
+  PC -.->|"8.8.8.8: does not exist"| X["Public internet"]
+```
+
+| Design choice | Reason |
+|---|---|
+| Zone name `hubspoke.internal` | ICANN reserved `.internal` for private networks, so it can't clash with a real public domain |
+| Hub link **with registration**, spoke1 link **resolution only** | Shows both link types. A VNet can have a registration link to only one private zone; spoke VMs then need manual records |
+| Manual A record + CNAME (`app`) | Non-VM names and friendly service names; clients follow the CNAME, so the target can change without touching them |
+| Public zone **not delegated** | No domain purchase. Query Azure's name servers directly to prove the zone works, and 8.8.8.8 to show the delegation gap |
+| `203.0.113.10` | TEST-NET-3 (RFC 5737): a documentation range, never a real server |
+
+### Results
+
+| Test | Result | Evidence |
+|---|---|---|
+| Baseline, no zone | Each VM's own name resolved (from the **local host database**, `fe80::` IPv6, not DNS). The other VM: **NOT FOUND** both ways | `lab5-01` |
+| Auto-registration | `vm-dns-hub A 10.0.1.30` appeared on its own, `isAutoRegistered=True`, **TTL 10** | `lab5-01` |
+| Resolution-only link | No record for `vm-dns-spoke1` until added by hand; then both VMs resolved all names, and `app` showed the CNAME → A chain | `lab5-01`, `lab5-02` |
+| Resolver | VMs query **127.0.0.53** (systemd-resolved stub, which caches), which forwards to 168.63.129.16 | `lab5-02` |
+| Public zone | Azure's name server answered A, CNAME, TXT and SOA. **8.8.8.8: "does not exist"** for the same names | `lab5-04` |
+| Name servers | 4 servers in **4 different TLDs** (`.com`, `.net`, `.org`, `.info`), so one TLD's outage can't take the zone down | `lab5-04` |
+| Authoritative CNAME answer | An A query for `app` returned **only the CNAME**. Following it is the recursive resolver's job (hypothesis) | `lab5-04` |
+| Code vs. live | `lab5/dns.bicep`: **9 of 9 NoChange on the first what-if** | `lab5-05` |
+| **Deallocate** the auto-registered VM | Its A record was **gone within 30 s** | `lab5-06` |
+| **Delete** it | Still absent; no manual DNS change at any point | `lab5-06` |
+
+### Incident: "The Spoke Can't Resolve the Hub's Names"
+
+**Change.** `link-spoke1` was deleted in the portal (activity log 18:10:06).
+
+**Symptom and diagnosis.** The same three queries, from the spoke VM and from the hub VM as a control:
+
+| Query (from the spoke unless noted) | Through the VM stub (cached) | Direct to 168.63.129.16 |
+|---|---|---|
+| `vm-dns-hub` (TTL 10) | NXDOMAIN, SOA **`a.root-servers.net`** | NXDOMAIN, SOA **`a.root-servers.net`** |
+| `app` (TTL 300) | **NOERROR**, CNAME → A (**from the cache**) | NXDOMAIN, SOA `a.root-servers.net` |
+| `not-a-record` (deliberate control) | NXDOMAIN, SOA `a.root-servers.net` | NXDOMAIN, SOA `a.root-servers.net` |
+| **Hub:** `not-a-record` | NXDOMAIN, SOA **`azureprivatedns.net`** | NXDOMAIN, SOA **`azureprivatedns.net`** |
+
+**The deciding evidence is the NXDOMAIN authority section.** From the spoke, the **public DNS root** answered, so the query never saw the private zone. From the hub, the **private zone** answered "no such name". The same error code had two different meanings.
+
+**Hypotheses:**
+- H1, a record was deleted: **ruled out**. All 4 records were still in the zone.
+- H2, the VNet's DNS servers changed: **ruled out**. Still Azure-provided.
+- H3, the zone was no longer linked to vnet-spoke1: **confirmed**. Only `link-hub` was listed.
+
+**Fix.** Re-created `link-spoke1` (resolution only) in the portal. Every query recovered at once, and the private zone answered `not-a-record` again.
+
+**Caching makes incidents look inconsistent.** During the outage, `app` (TTL 300) **still worked from the spoke's cache**, while `vm-dns-hub` (TTL 10) failed at once. In a real ticket that shows up as "some names work and some don't". Querying 168.63.129.16 directly bypasses the VM's cache.
+
+### What Went Wrong Along the Way
+
+| Finding | Cause | Change |
+|---|---|---|
+| The baseline "own name resolves" wasn't DNS | Ubuntu answers its own hostname from the local host database (`fe80::`) | Reported accurately; test peer names, not the VM's own name |
+| I predicted the resolver as 168.63.129.16 | VMs use the local stub 127.0.0.53, which forwards to it | Query both in every test |
+| Blank values in the first public-zone output | PowerShell: inside a `switch`, `$_` is the switch input, not the record | Assign the record to a variable before the `switch` |
+| The activity log showed the link delete late, and the re-create not at all | Activity log lag | Timings come from the tests, not the log |
+| The VNet DNS suffix (`...internal.cloudapp.net`) appeared in evidence | It's a per-VNet identifier | Masked before commit |
+
+### Evidence Index (Lab 5)
+
+| File | Contents |
+|---|---|
+| `lab5-00-preflight.txt` | Providers, existing zones, policy, VNet DNS settings, free IPs, quota, budgets |
+| `lab5-01-build.txt` | VMs, the no-zone baseline, zone and link configuration, auto-registered record, first lookups |
+| `lab5-02-records.txt` | Manual A and CNAME records, `dig` from both VMs |
+| `lab5-03-incident-link-removed.txt` | The incident: the authority-section diagnosis, hypotheses, fix, recovery |
+| `lab5-04-public-zone.txt` | Public zone, name servers, direct queries, 8.8.8.8 comparison |
+| `lab5-05-bicep-whatif.txt` | What-if of `lab5/dns.bicep` (9 NoChange) |
+| `lab5-06-teardown.txt` | Auto-registration lifecycle (deallocate, delete), teardown, verification |
+
+### Teardown and Cost
+
+`rg-dns-lab` was deleted: both zones, both links, both VMs, and the NICs and disks. After teardown: 0 DNS zones and 0 VMs in the subscription. The Lab 1 network still has its 7 resources, uses Azure-provided DNS, and has no IPs in use.
+
+Cost estimate, **not a billed figure**:
+- two D2als_v6 for about 40 minutes: about $0.10
+- DNS zones: about $0.50 per zone per month list price; I haven't confirmed whether same-day deletion is prorated
+- queries: negligible
+
+### Known Limitations (Lab 5)
+
+- **No hybrid DNS.** No Private Resolver, no conditional forwarding from on-premises, no custom DNS servers.
+- **Not delegated.** The public zone was never live on the internet.
+- **spoke2 was never linked,** so its VMs would not resolve `hubspoke.internal`. That was a deliberate gap, not tested.
+- **The CNAME behaviour is a hypothesis.** I didn't confirm it against documentation.
+
+---
+
 ## AZ-104 Exam Objectives Covered
 
 | Domain | Objective |
@@ -561,6 +684,7 @@ All resources ran for roughly 3 hours: three D2als_v6 VMs, about 1 hour of Basti
 | Monitor and maintain Azure resources | Use Network Watcher (IP flow verify) to troubleshoot connectivity |
 | Implement and manage virtual networking | Configure an internal Azure Load Balancer: frontend, backend pool, health probe, rule (Lab 3) |
 | Implement and manage virtual networking | Configure Azure Bastion; configure private subnets (default outbound access) (Lab 3) |
+| Implement and manage virtual networking | Configure Azure DNS: public and private zones, record sets, VNet links, auto-registration (Lab 5) |
 | Monitor and maintain Azure resources | Use metrics (`DipAvailability`) to monitor load balancer backend health (Lab 3) |
 | Deploy and manage Azure compute resources | Interpret, modify, and deploy Bicep files; export a deployment as a template |
 | Deploy and manage Azure compute resources | Manage VM sizes and power states (deallocated vs. stopped) |
@@ -583,6 +707,8 @@ All resources ran for roughly 3 hours: three D2als_v6 VMs, about 1 hour of Basti
 - **I learned that service tags hide surprises.** The `VirtualNetwork` tag includes the platform address `168.63.129.16`, so my own deny rule silently blocked the load balancer's health probes. Network Watcher can't test that address. A packet capture on the VM proved where the probes were being dropped.
 - **I learned to measure failover, not assume it.** With a 5-second probe and a threshold of 1, traffic moved off a crashed backend in about 7 seconds and came back about 6 seconds after the restart. 6 of 119 requests failed in that window.
 - **I learned to check my own test before blaming the network.** A TCP connect in 2 ms followed by a TLS error meant the client and server disagreed on protocol, not that the network was down.
+- **I learned to read who answered a DNS failure.** An NXDOMAIN's authority section said whether the private zone or the public root answered. That separated "the record is missing" from "the zone isn't linked to this VNet" without opening the portal.
+- **I learned that caches make DNS incidents look inconsistent.** One name failed at once while another kept working for five minutes, purely because of their TTLs.
 - **I found a security layer I didn't create.** The raw effective-rules JSON showed an Azure Virtual Network Manager security admin rule next to my NSG. Admin rules are evaluated before NSGs, so when an NSG looks right but traffic is still blocked, that's another place to check.
 
 ## Future Improvements

@@ -1,0 +1,31 @@
+=== Lab 5 teardown + auto-registration lifecycle, 2026-11-05 18:23 ===
+--- 0. before: record sets in hubspoke.internal ---
+  @	Microsoft.Network/privateDnsZones/SOA	False
+  app	Microsoft.Network/privateDnsZones/CNAME	False
+  vm-dns-hub	Microsoft.Network/privateDnsZones/A	True
+  vm-dns-spoke1	Microsoft.Network/privateDnsZones/A	False
+--- 1. P1: deallocate vm-dns-hub - does its auto-registered record stay? (prediction: unknown, observed) ---
+  deallocate exit=0 at 18:24:15
+  +30s vm-dns-hub record: ABSENT
+  +60s vm-dns-hub record: ABSENT
+  +90s vm-dns-hub record: ABSENT
+  +120s vm-dns-hub record: ABSENT
+--- 2. P2: delete vm-dns-hub - the record should disappear on its own (prediction: within a few minutes) ---
+  vm delete exit=0 at 18:26:34
+  + 14s after delete started: vm-dns-hub record ABSENT
+  RESULT P2: record REMOVED automatically - no manual DNS change made
+  remaining record sets: @, app, vm-dns-spoke1
+--- 3. delete rg-dns-lab (both zones, links, vm-dns-spoke1, NICs, disks) ---
+  rg-dns-lab delete exit=0
+--- 4. VERIFY ---
+  rg-dns-lab exists: false
+  public zones: 0  private zones: 0
+  VMs in the subscription: 0  running: 0
+  rg-hubspoke-lab resources: 7 (expect 7)  hub snet-shared IPs in use: 0  spoke1 IPs in use: 0
+  vnet-hub DNS: Azure-provided (unchanged)
+  vnet-spoke1 DNS: Azure-provided (unchanged)
+  budget budget-az104-lab: spent 0.7606962304344933 of 10.0
+  budget budget-backup-dr-lab: spent 0.1573434 of 5.0
+  budget budget-compute-hosting-lab: spent 0.3440676718550209 of 5.0
+  budget budget-storage-pe-lab: spent 0.0623624513794723 of 5.0
+  partial-GUID leak check (should be 0): 0

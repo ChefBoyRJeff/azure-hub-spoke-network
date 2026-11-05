@@ -1,0 +1,44 @@
+=== Lab 5 M1: workload + private DNS zone, 2026-11-05 17:55 ===
+--- 1. resource group ---
+  rg-dns-lab create exit=0
+--- 2. NICs on the Project 1 subnets (static IP, accelerated networking, no public IP) ---
+  nic-vm-dns-hub 10.0.1.30 create exit=0
+  nic-vm-dns-spoke1 10.1.1.30 create exit=0
+--- 3. VMs (D2als_v6, Ubuntu 24.04, random password never displayed; disk + NIC deleted with the VM) ---
+  vm-dns-hub create submitted exit=0
+  vm-dns-spoke1 create submitted exit=0
+  vm-dns-hub created (wait exit=0)
+  vm-dns-spoke1 created (wait exit=0)
+--- 4. BASELINE (no private zone yet): Azure-provided DNS only resolves names inside the same VNet ---
+  PREDICTION: each VM resolves its own name; NEITHER resolves the other by short name (peering doesn't share names).
+  from vm-dns-hub:
+    hostname=vm-dns-hub  fqdn=vm-dns-hub.<vnet-suffix>
+    resolver: 168.63.129.16  search: <vnet-suffix>
+    lookup vm-dns-hub -> fe80::20d:3aff:fe14:582a
+    lookup vm-dns-spoke1 -> NOT FOUND
+  from vm-dns-spoke1:
+    hostname=vm-dns-spoke1  fqdn=vm-dns-spoke1.<vnet-suffix>
+    resolver: 168.63.129.16  search: <vnet-suffix>
+    lookup vm-dns-hub -> NOT FOUND
+    lookup vm-dns-spoke1 -> fe80::6245:bdff:feee:65d7
+--- 5. state ---
+  vm-dns-hub	10.0.1.30	VM running
+  vm-dns-spoke1	10.1.1.30	VM running
+  partial-GUID leak check (should be 0): 0
+--- 6. private zone (built in the portal), 18:01:36 ---
+  zone=hubspoke.internal state=Succeeded records=2 links=2 linksWithRegistration=1 tags=costCenter=CC-1001,environment=lab,lab=lab5,owner=jeff,project=azure-hub-spoke-network
+  link link-hub     vnet=vnet-hub     registrationEnabled=True linkState=Completed resolutionPolicy=
+  link link-spoke1  vnet=vnet-spoke1  registrationEnabled=False linkState=Completed resolutionPolicy=
+--- 7. record sets in the zone ---
+  PREDICTION: vm-dns-hub has an auto-registered A record 10.0.1.30; vm-dns-spoke1 has NONE (its VNet's link is resolution-only).
+  @                SOA   ttl=3600  autoRegistered=False SOA azureprivatedns.net
+  vm-dns-hub       A     ttl=10    autoRegistered=True  10.0.1.30
+--- 8. resolution tests from both VMs (FQDN in the private zone) ---
+  from vm-dns-hub:
+    lookup vm-dns-hub.hubspoke.internal -> 10.0.1.30
+    lookup vm-dns-spoke1.hubspoke.internal -> NXDOMAIN
+  from vm-dns-spoke1:
+    lookup vm-dns-hub.hubspoke.internal -> 10.0.1.30
+    lookup vm-dns-spoke1.hubspoke.internal -> NXDOMAIN
+  partial-GUID leak check (should be 0): 0
+  note (M1): the own-name lookups returned fe80:: link-local IPv6 - answered from the VM's local host database (systemd nss-myhostname), not Azure DNS.

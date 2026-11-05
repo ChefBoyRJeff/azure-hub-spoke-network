@@ -1,0 +1,29 @@
+=== Lab 5 M0: Azure DNS preflight, 2026-11-05 17:51 ===
+--- 1. subscription and providers ---
+  subscription: AZ104_PracticeSubscription
+  Microsoft.Network    Registered
+  Microsoft.Compute    Registered
+--- 2. existing DNS zones in the subscription ---
+  public zones:  0 
+  private zones: 0 
+--- 3. policy: are the resource types this lab needs blocked? ---
+  assignment 'Block costly lab resources': 9 blocked types
+    Microsoft.Network/dnsZones                                 blocked=False
+    Microsoft.Network/privateDnsZones                          blocked=False
+    Microsoft.Network/privateDnsZones/virtualNetworkLinks      blocked=False
+    Microsoft.Compute/virtualMachines                          blocked=False
+--- 4. Project 1 network state ---
+  vnet-hub     10.0.0.0/16   dns=Azure-provided (168.63.129.16) peerings=peer-hub-to-spoke1[Connected] peer-hub-to-spoke2[Connected]
+  vnet-spoke1  10.1.0.0/16   dns=Azure-provided (168.63.129.16) peerings=peer-spoke1-to-hub[Connected]
+  vnet-spoke2  10.2.0.0/16   dns=Azure-provided (168.63.129.16) peerings=peer-spoke2-to-hub[Connected]
+  planned IP 10.0.1.30 (hub) available: true
+  planned IP 10.1.1.30 (spoke1) available: true
+--- 5. VM size and quota ---
+  D2als_v6 restrictions=''  standardDalv6Family used=0 limit=10
+  VMs in subscription: 0
+--- 6. budgets ---
+  budget-az104-lab: spent 0.760696230434493 of 10.0
+  budget-backup-dr-lab: spent 0.1573434 of 5.0
+  budget-compute-hosting-lab: spent 0.3440676718550209 of 5.0
+  budget-storage-pe-lab: spent 0.0623624513794723 of 5.0
+  partial-GUID leak check (should be 0): 0

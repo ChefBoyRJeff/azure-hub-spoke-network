@@ -1,0 +1,26 @@
+=== Lab 5 M5: Bicep for both zones (what-if only), 2026-11-05 18:22 ===
+  file: lab5\dns.bicep size=3893 bytes (expected 3893)
+  bicep build exit=0
+  PREDICTION pass 1: 0 create, 0 delete; possible '+ tags' on the links (portal-built without tags); read-only noise.
+  what-if exit=0
+    The deployment will update the following scope:
+    Scope: /subscriptions/<id>/resourceGroups/RG-DNS-LAB
+      = Microsoft.Network/dnsZones/hubspoke-7m2p9q.com [2018-05-01]
+      = Microsoft.Network/dnsZones/hubspoke-7m2p9q.com/A/www [2018-05-01]
+      = Microsoft.Network/dnsZones/hubspoke-7m2p9q.com/CNAME/app [2018-05-01]
+      = Microsoft.Network/dnsZones/hubspoke-7m2p9q.com/TXT/@ [2018-05-01]
+      = Microsoft.Network/privateDnsZones/hubspoke.internal [2020-06-01]
+      = Microsoft.Network/privateDnsZones/hubspoke.internal/A/vm-dns-spoke1 [2020-06-01]
+      = Microsoft.Network/privateDnsZones/hubspoke.internal/CNAME/app [2020-06-01]
+      = Microsoft.Network/privateDnsZones/hubspoke.internal/virtualNetworkLinks/link-hub [2020-06-01]
+      = Microsoft.Network/privateDnsZones/hubspoke.internal/virtualNetworkLinks/link-spoke1 [2020-06-01]
+      * Microsoft.Compute/disks/vm-dns-hub_disk1_7c243b8fe6294cf2bf6057736f250d35
+      * Microsoft.Compute/disks/vm-dns-spoke1_disk1_a3fc9c06ee504d4cba6c5554d3773042
+      * Microsoft.Compute/virtualMachines/vm-dns-hub
+      * Microsoft.Compute/virtualMachines/vm-dns-spoke1
+      * Microsoft.Network/networkInterfaces/nic-vm-dns-hub
+      * Microsoft.Network/networkInterfaces/nic-vm-dns-spoke1
+    Resource changes: 9 no change, 6 to ignore.
+  creates=0 deletes=0
+  partial-GUID leak check (should be 0): 0
+  RESULT pass 1: all 9 declared resources NoChange (both zones, both links, 5 manual records); 0 creates, 0 deletes; VMs/NICs/disks ignored (not in this template). Code matches live on the first pass.

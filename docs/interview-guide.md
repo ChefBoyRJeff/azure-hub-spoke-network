@@ -152,6 +152,58 @@ I didn't assume the deploy broke it. I checked the Azure side (subnet, NIC, effe
 - The load balancer was built in the portal. Its Bicep was what-if checked, not deployed.
 - The hub `snet-shared` still has no NSG.
 
+## 7. Lab 5: Azure DNS
+
+### Two-minute walkthrough
+
+"Azure's built-in DNS only resolves VM names inside the same VNet, and peering doesn't share names. So I created a private zone and linked it to the hub with auto-registration and to a spoke for resolution only.
+- **The hub VM** appeared in the zone by itself.
+- **The spoke VM** needed a manual record.
+- **I added a CNAME** for a friendly service name.
+
+Then I deleted the spoke's link and diagnosed it like a ticket. The key was the **authority section** of the NXDOMAIN answer. From the spoke, the public DNS root answered, so the private zone was invisible. From the hub, the private zone answered 'no such name'. Same error code, two different meanings. Records and the VNet's DNS settings were fine, and the link list confirmed it. Re-adding the link fixed it immediately.
+
+One thing caught my eye: during the outage, one name still worked from the VM's cache for up to five minutes, while another failed at once, because of their TTLs. I also built a public zone without buying a domain. Azure's name servers answered for it, but 8.8.8.8 didn't know it existed, which is exactly what delegation fixes."
+
+### Likely questions
+
+**Q: Why can't VMs in peered VNets resolve each other by name?**
+Azure-provided DNS scopes VM names to the VNet. Peering gives IP connectivity, not name sharing. You need a private DNS zone linked to every VNet that should resolve the names, or your own DNS servers.
+
+**Q: Registration link vs. resolution link?**
+A registration link creates and deletes A records for VMs in that VNet automatically. A VNet can have one registration link across all private zones, but many resolution links. A resolution link only lets VMs query the zone. I measured the lifecycle: the auto-registered record disappeared within 30 seconds of deallocating the VM.
+
+**Q: A user says a name returns NXDOMAIN. How do you tell a missing record from a missing link?**
+Look at the authority section. With `dig`, an SOA of `azureprivatedns.net` means the private zone answered and the record doesn't exist. An SOA from the public root means the zone isn't visible from that VNet: a missing link, or the VNet using different DNS servers. Then check the record sets, the VNet's DNS settings and the zone's links, in that order.
+
+**Q: Why did some names keep working during your outage?**
+The VM's local resolver cached answers for their TTL. The CNAME had a 300-second TTL, so it kept resolving from the cache. The auto-registered record had a 10-second TTL and failed almost at once. To bypass the cache, query 168.63.129.16 directly.
+
+**Q: What does delegation do for a public zone?**
+The domain's registry gets NS records pointing at the zone's Azure name servers. Without delegation, the zone answers only if you ask its name servers directly. Recursive resolvers like 8.8.8.8 never find it. I showed both.
+
+**Q: Why four name servers in different TLDs?**
+So that a problem with one top-level domain's infrastructure can't make the zone unreachable.
+
+**Q: How did you manage it as code?**
+I built in the portal, then wrote Bicep for both zones, the links and the manual records. What-if showed 9 of 9 NoChange on the first pass. I deliberately left the auto-registered record and the SOA and NS records out, because Azure manages them.
+
+### Practice challenges (Lab 5)
+
+1. You add spoke2. What must you add so its VMs resolve `hubspoke.internal`, and would they auto-register?
+2. An on-premises server needs to resolve `hubspoke.internal`. What Azure component do you add?
+3. A VNet uses custom DNS servers (two VMs running DNS). Will the private zone link still work for its VMs?
+
+**Model answers.**
+1. A link from `hubspoke.internal` to vnet-spoke2. Registration only if that link enables it, and only if vnet-spoke2 doesn't already have a registration link to another private zone.
+2. Azure DNS Private Resolver, with an inbound endpoint in the hub, and a conditional forwarder on the on-premises DNS pointing at it.
+3. Only if the custom DNS servers forward to 168.63.129.16 from a VNet that's linked to the zone. The link applies to queries that reach Azure DNS, not to the VMs directly.
+
+### Honest limits (Lab 5)
+
+- About 40 minutes of VM time and one incident. No hybrid DNS, and the public zone wasn't delegated.
+- The CNAME behaviour on the authoritative server is a hypothesis.
+
 ## 5. Honest Limits to Mention If Asked
 
 - It's a lab: two spokes in Lab 1, one hub and one spoke with two VMs in Lab 2.

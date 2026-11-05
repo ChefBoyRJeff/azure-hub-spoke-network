@@ -1,0 +1,18 @@
+=== Lab 5 M2: manual records (built in the portal), 2026-11-05 18:07 ===
+--- 1. record sets ---
+  @                SOA    ttl=3600  autoRegistered=False SOA azureprivatedns.net
+  app              CNAME  ttl=300   autoRegistered=False -> vm-dns-spoke1.hubspoke.internal
+  vm-dns-hub       A      ttl=10    autoRegistered=True  10.0.1.30
+  vm-dns-spoke1    A      ttl=300   autoRegistered=False 10.1.1.30
+--- 2. dig from both VMs: answer section shows TTL and the CNAME chain ---
+  from vm-dns-hub:
+    vm-dns-hub.hubspoke.internal => status: NOERROR vm-dns-hub.hubspoke.internal. 10 IN	A	10.0.1.30
+    vm-dns-spoke1.hubspoke.internal => status: NOERROR vm-dns-spoke1.hubspoke.internal. 300 IN	A	10.1.1.30
+    app.hubspoke.internal => status: NOERROR app.hubspoke.internal.	300	IN	CNAME	vm-dns-spoke1.hubspoke.internal. vm-dns-spoke1.hubspoke.internal. 300 IN	A	10.1.1.30
+    server used: 127.0.0.53#53(127.0.0.53) (UDP)
+  from vm-dns-spoke1:
+    vm-dns-hub.hubspoke.internal => status: NOERROR vm-dns-hub.hubspoke.internal. 10 IN	A	10.0.1.30
+    vm-dns-spoke1.hubspoke.internal => status: NOERROR vm-dns-spoke1.hubspoke.internal. 300 IN	A	10.1.1.30
+    app.hubspoke.internal => status: NOERROR app.hubspoke.internal.	300	IN	CNAME	vm-dns-spoke1.hubspoke.internal. vm-dns-spoke1.hubspoke.internal. 300 IN	A	10.1.1.30
+    server used: 127.0.0.53#53(127.0.0.53) (UDP)
+  partial-GUID leak check (should be 0): 0  vnet-suffix leak check (should be 0): 0

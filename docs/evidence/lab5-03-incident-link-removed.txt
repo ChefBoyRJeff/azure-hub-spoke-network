@@ -1,0 +1,47 @@
+=== Lab 5 M3: controlled failure - 'spoke can't resolve hub names', 2026-11-05 18:10 ===
+--- SYMPTOM + CONTROL: the same queries from the spoke VM and the hub VM ---
+  not-a-record.hubspoke.internal is a deliberate control: a name that doesn't exist IN the zone.
+  from vm-dns-spoke1:
+    vm-dns-hub.hubspoke.internal via stub 127.0.0.53: status: NXDOMAIN authority SOA: a.root-servers.net.
+    vm-dns-hub.hubspoke.internal via 168.63.129.16:  status: NXDOMAIN authority SOA: a.root-servers.net.
+    app.hubspoke.internal via stub 127.0.0.53: status: NOERROR answer: CNAME vm-dns-spoke1.hubspoke.internal. A 10.1.1.30
+    app.hubspoke.internal via 168.63.129.16:  status: NXDOMAIN authority SOA: a.root-servers.net.
+    not-a-record.hubspoke.internal via stub 127.0.0.53: status: NXDOMAIN authority SOA: a.root-servers.net.
+    not-a-record.hubspoke.internal via 168.63.129.16:  status: NXDOMAIN authority SOA: a.root-servers.net.
+  from vm-dns-hub (control):
+    vm-dns-hub.hubspoke.internal via stub 127.0.0.53: status: NOERROR answer: A 10.0.1.30
+    vm-dns-hub.hubspoke.internal via 168.63.129.16:  status: NOERROR answer: A 10.0.1.30
+    app.hubspoke.internal via stub 127.0.0.53: status: NOERROR answer: CNAME vm-dns-spoke1.hubspoke.internal. A 10.1.1.30
+    app.hubspoke.internal via 168.63.129.16:  status: NOERROR answer: CNAME vm-dns-spoke1.hubspoke.internal. A 10.1.1.30
+    not-a-record.hubspoke.internal via stub 127.0.0.53: status: NXDOMAIN authority SOA: azureprivatedns.net.
+    not-a-record.hubspoke.internal via 168.63.129.16:  status: NXDOMAIN authority SOA: azureprivatedns.net.
+--- HYPOTHESES: H1 record deleted  H2 spoke VNet DNS servers changed  H3 zone no longer linked to vnet-spoke1 ---
+  H1 records in the zone (control plane):
+    @	Microsoft.Network/privateDnsZones/SOA
+    app	Microsoft.Network/privateDnsZones/CNAME
+    vm-dns-hub	Microsoft.Network/privateDnsZones/A
+    vm-dns-spoke1	Microsoft.Network/privateDnsZones/A
+  H2 vnet-spoke1 DNS servers: Azure-provided (168.63.129.16)
+  H3 links on the zone:
+    link-hub     vnet=vnet-hub     registration=True state=Completed
+  the change (activity log, caller omitted):
+  partial-GUID leak check (should be 0): 0
+--- FIX (portal): link-spoke1 re-created, resolution only ---
+    link-hub     vnet=vnet-hub     registration=True state=Completed
+    link-spoke1  vnet=vnet-spoke1  registration=False state=Completed
+  link events (activity log):
+    18:10:06  Succeeded Microsoft.Network/privateDnsZones/virtualNetworkLinks/delete  link-spoke1
+--- VERIFY from vm-dns-spoke1 (18:12:30) ---
+    vm-dns-hub.hubspoke.internal via stub 127.0.0.53: status: NOERROR answer: A 10.0.1.30
+    vm-dns-hub.hubspoke.internal via 168.63.129.16:  status: NOERROR answer: A 10.0.1.30
+    app.hubspoke.internal via stub 127.0.0.53: status: NOERROR answer: CNAME vm-dns-spoke1.hubspoke.internal. A 10.1.1.30
+    app.hubspoke.internal via 168.63.129.16:  status: NOERROR answer: CNAME vm-dns-spoke1.hubspoke.internal. A 10.1.1.30
+    not-a-record.hubspoke.internal via stub 127.0.0.53: status: NXDOMAIN authority SOA: azureprivatedns.net.
+    not-a-record.hubspoke.internal via 168.63.129.16:  status: NXDOMAIN authority SOA: azureprivatedns.net.
+  partial-GUID leak check (should be 0): 0
+--- RESULT M3 ---
+  ROOT CAUSE (H3 confirmed): link-spoke1 deleted (activity log 18:10:06). H1 ruled out (4 records still in the zone); H2 ruled out (vnet-spoke1 uses Azure-provided DNS).
+  KEY DIAGNOSTIC: NXDOMAIN authority section. Spoke: SOA a.root-servers.net = PUBLIC root answered (private zone not visible). Hub: SOA azureprivatedns.net for not-a-record = private zone answered 'no such name'.
+  CACHE EFFECT: during the outage app.hubspoke.internal (TTL 300) still resolved via the VM's stub 127.0.0.53 (cached) while @168.63.129.16 returned NXDOMAIN; vm-dns-hub (TTL 10) failed at once. Query 168.63.129.16 directly to bypass the VM cache.
+  FIX: link-spoke1 re-created in the portal (resolution only); at 18:12:30 all names resolved again, not-a-record answered by azureprivatedns.net. Recovery was immediate.
+  NOTE: the activity log showed the delete only on the second run and not yet the re-create - it lags; timings taken from the tests, not the log.

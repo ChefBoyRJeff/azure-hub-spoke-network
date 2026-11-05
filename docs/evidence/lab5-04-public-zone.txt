@@ -1,0 +1,24 @@
+=== Lab 5 M4: public DNS zone (built in the portal, not delegated), 2026-11-05 18:20 ===
+  note: first run (18:19) printed blank values - inside a switch block, $_ is the switch input, not the record. Values captured in a variable first now.
+--- 1. zone ---
+  name=hubspoke-7m2p9q.com type=Public records=5 tags=costCenter=CC-1001,environment=lab,lab=lab5,owner=jeff,project=azure-hub-spoke-network
+  Azure name servers: ns1-01.azure-dns.com., ns2-01.azure-dns.net., ns3-01.azure-dns.org., ns4-01.azure-dns.info.  (4 different TLDs: one TLD outage can't take the zone down)
+--- 2. record sets ---
+  @      NS     ttl=172800 ns1-01.azure-dns.com.,ns2-01.azure-dns.net.,ns3-01.azure-dns.org.,ns4-01.azure-dns.info.
+  @      SOA    ttl=3600   host=ns1-01.azure-dns.com. email=azuredns-hostmaster.microsoft.com serial=1
+  @      TXT    ttl=300    lab5-verification
+  app    CNAME  ttl=300    -> www.hubspoke-7m2p9q.com
+  www    A      ttl=300    203.0.113.10
+--- 3. query Azure's name server directly (ns1-01.azure-dns.com) - works without delegation ---
+  www.hubspoke-7m2p9q.com      A     -> A 203.0.113.10 ttl=300
+  app.hubspoke-7m2p9q.com      CNAME -> CNAME www.hubspoke-7m2p9q.com ttl=300
+  app.hubspoke-7m2p9q.com      A     -> CNAME www.hubspoke-7m2p9q.com ttl=300
+  hubspoke-7m2p9q.com          TXT   -> TXT 'lab5-verification' ttl=300
+  hubspoke-7m2p9q.com          SOA   -> SOA primary=ns1-01.azure-dns.com admin=azuredns-hostmaster.microsoft.com serial=1
+  nothere.hubspoke-7m2p9q.com  A     -> ERROR nothere.hubspoke-7m2p9q.com : DNS name does not exist.
+--- 4. the same names through public DNS (8.8.8.8) - the internet doesn't know them (not delegated) ---
+  www.hubspoke-7m2p9q.com      A   via 8.8.8.8 -> ERROR www.hubspoke-7m2p9q.com : DNS name does not exist.
+  hubspoke-7m2p9q.com          NS  via 8.8.8.8 -> ERROR hubspoke-7m2p9q.com : DNS name does not exist.
+  RESULT: Azure's name servers answer authoritatively for the zone, but public resolvers return 'does not exist' - the registry has no NS delegation to ns1-01.azure-dns.com etc. Delegation (at the registrar) is what makes a public zone live.
+  partial-GUID leak check (should be 0): 0
+  OBSERVATION: app A query against the authoritative server returned ONLY the CNAME (no A for the in-zone target). Hypothesis: authoritative answers don't chase CNAMEs; recursive resolvers (168.63.129.16, 8.8.8.8) do - contrast M2's dig through the VM resolver, which showed both.
