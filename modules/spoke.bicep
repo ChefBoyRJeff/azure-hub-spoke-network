@@ -23,6 +23,9 @@ param hubAddressSpace string
 @description('Hub shared services subnet, allowed SSH/RDP into the workload subnet')
 param hubSharedSubnetPrefix string
 
+@description('Hub AzureBastionSubnet, allowed SSH into the workload subnet (Lab 3)')
+param hubBastionSubnetPrefix string
+
 @description('Private IP of the hub firewall/NVA used as next hop for egress')
 param nvaIpAddress string
 
@@ -63,6 +66,20 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2026-01-01' = {
         }
       }
       {
+        // Lab 3: Bastion connects from its own subnet, not snet-shared
+        name: 'Allow-SSH-From-Bastion'
+        properties: {
+          priority: 115
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: hubBastionSubnetPrefix
+          sourcePortRange: '*'
+          destinationAddressPrefix: workloadSubnetPrefix
+          destinationPortRange: '22'
+        }
+      }
+      {
         name: 'Allow-Intra-Subnet'
         properties: {
           priority: 120
@@ -73,6 +90,22 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2026-01-01' = {
           sourcePortRange: '*'
           destinationAddressPrefix: workloadSubnetPrefix
           destinationPortRange: '*'
+        }
+      }
+      {
+        // Lab 3 RCA: the VirtualNetwork tag in Deny-VNet-Inbound also matches the
+        // load balancer probe source (168.63.129.16), and 4000 is evaluated before the
+        // default AllowAzureLoadBalancerInBound (65001). Allow the probe explicitly.
+        name: 'Allow-AzureLB-Probe-443'
+        properties: {
+          priority: 3900
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: 'AzureLoadBalancer'
+          sourcePortRange: '*'
+          destinationAddressPrefix: workloadSubnetPrefix
+          destinationPortRange: '443'
         }
       }
       {
@@ -123,6 +156,8 @@ resource vnet 'Microsoft.Network/virtualNetworks@2026-01-01' = {
         addressSpace
       ]
     }
+    // Platform default, declared so what-if stays clean (same finding as P3 RCA-002)
+    privateEndpointVNetPolicies: 'Disabled'
     subnets: [
       {
         name: 'snet-workload'

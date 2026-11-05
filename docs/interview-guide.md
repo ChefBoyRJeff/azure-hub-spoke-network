@@ -97,9 +97,64 @@ Check your own answers against these. Don't memorize them; an answer recited wor
 
 **7. Next hop `None`.** Traffic matching that route is **dropped**. In my lab, the platform's `10.0.0.0/8 → None` route would have dropped traffic to the peered VNet if the more specific `/16` peering route weren't there. A route to `None` usually means a missing peering, or a user-defined route that deliberately blackholes traffic.
 
+## 6. Lab 3: Internal Load Balancer and Bastion
+
+### Two-minute walkthrough
+
+"I put two web VMs in a spoke behind an internal Standard Load Balancer and gave admins SSH through Azure Bastion, with no public IPs on any VM. The load balancer came up with both health probes at 0%. Network Watcher can't test the probe address, so I ran a packet capture on the VM: only one probe packet arrived in 20 seconds. The cause was my own Lab 1 rule. My `VirtualNetwork` deny at priority 4000 also matches the probe source, 168.63.129.16, and it's evaluated before Azure's default load balancer allow at 65001. One allow rule for the `AzureLoadBalancer` tag at 3900 fixed it: 37 probe packets in 20 seconds, and 100% health. Then I measured failover by stopping the web service on one VM under load: traffic moved in about 7 seconds, it came back about 6 seconds after the restart, and 6 of 119 requests failed in that window. For Bastion, IP flow verify predicted the SSH block into the spoke before Bastion was even up. I added the rule through code, verified it, and the logins worked. The VM logs show the source as the Bastion subnet. Both NSG fixes went back into the Lab 1 Bicep module."
+
+### Likely questions
+
+**Q: Why did your health probes fail when Azure has a default rule allowing the load balancer?**
+Default rules are at 65000 and above, and my custom deny was at 4000. The `VirtualNetwork` service tag includes the host virtual IP `168.63.129.16`, which is where probes come from, so my deny matched first. The fix is an explicit `AzureLoadBalancer` allow above the deny. I proved the cause by experiment: probe packets went from 1 to 37 per 20 seconds after the rule, with nothing else changed.
+
+**Q: How did you troubleshoot without Network Watcher?**
+IP flow verify and next hop both refuse the platform address with `IpAddressInRestrictedAddressSpace`. So I went one layer down: confirmed the web server listened on `0.0.0.0:443`, then captured packets on the backend. A listening service plus missing probe packets put the drop outside the VM, which pointed at the NSG.
+
+**Q: The first test sent 20 out of 20 connections to one VM. Is the load balancer broken?**
+No. Azure Load Balancer distributes by a hash of the 5-tuple, not round-robin, and that run started right after one backend turned healthy. A 50-connection re-test gave 17/33, and the final run 20/30. I recorded the 20/0 result rather than hiding it, and re-tested with a bigger sample.
+
+**Q: Why did requests from a backend to its own load balancer fail?**
+Hairpinning isn't supported on Azure Load Balancer. When a backend's flow hashes back to itself, it fails. I saw 6 failures and 14 successes to the other VM, and 0 to itself.
+
+**Q: What does your failover number depend on?**
+Mainly the probe settings: a 5-second interval and a threshold of 1, so the backend is marked down at the first failed probe. Also on when the crash falls inside the probe interval. The failures came only in the window between the crash and the next probe.
+
+**Q: Why Bastion instead of a jump box with a public IP?**
+No public IP on any VM, no inbound SSH from the internet, and access goes through Entra sign-in to the portal. The trade-offs are cost, about $0.19 an hour for Basic, and that Basic is portal-only. Also, my subscription's cost policy blocked Bastion, so I used a one-day exemption scoped to the lab resource group and deleted it at teardown.
+
+**Q: Bastion failed twice. What happened?**
+The first failure was configuration: in East US, Bastion needed a zone-redundant public IP, and I'd created one with no zone. The second was `BastionDeploymentUnavailable`, a capacity limit in the region, which no configuration change fixes. I checked every prerequisite to rule out my side, kept the subnet and IP, and retried later. It succeeded with the same configuration.
+
+**Q: Tell me about a mistake you made.**
+Two from this lab. First, a deploy ran from the wrong version of a file, because my safety check only looked for deletions. Now every run checks each expected line and stops before touching Azure if one is missing. That check caught the next mistake, a file copied before an edit finished. Second, I misread a what-if index and "corrected" my own evidence wrongly. What-if lists subnets by name, not template order. I found it when the line stayed after the fix, and I recorded the retraction rather than deleting the earlier note.
+
+**Q: Everything failed from the client after a deploy. How did you approach it?**
+I didn't assume the deploy broke it. I checked the Azure side (subnet, NIC, effective routes, next hop, the NSG rule, and the activity log for any change), then inside the VM, plus a control test from another VM. curl connected over TCP in 2 ms, then failed with a TLS error, from both VMs. That ruled out the network. My test used `https://` against a plain HTTP server.
+
+### Practice challenges (Lab 3)
+
+1. Your probe uses TCP 443 instead of HTTP. What failure would it miss?
+2. You need SSH from Bastion to every spoke. Where do you put the rule, and what's its source?
+3. Why can't a backend VM reach its own load balancer frontend, and how would you work around it?
+4. The load balancer works, but the VMs can't install updates. Why, and what are two fixes?
+
+**Model answers.**
+1. A TCP probe only checks that something accepts the connection. A hung or broken application that still holds the port open stays "healthy". An HTTP probe needs a 200 from the path.
+2. In each spoke's NSG, which in my code means the shared spoke module, so every spoke gets it. Source: the `AzureBastionSubnet` prefix, TCP 22, above the VirtualNetwork deny.
+3. Hairpinning isn't supported. A flow that hashes back to the same backend fails. Call the local service directly, or put the client tier in a different backend.
+4. Private subnets and a spoke default route to an appliance that isn't deployed, so there's no outbound path. Fixes: a NAT gateway on the subnet, or a real firewall or appliance at the route's next hop.
+
+### Honest limits (Lab 3)
+
+- Ran for about 3 hours in a lab subscription. It wasn't a production web tier.
+- Plain HTTP on 443, not TLS. One test client.
+- The load balancer was built in the portal. Its Bicep was what-if checked, not deployed.
+- The hub `snet-shared` still has no NSG.
+
 ## 5. Honest Limits to Mention If Asked
 
 - It's a lab: two spokes in Lab 1, one hub and one spoke with two VMs in Lab 2.
-- No appliance is deployed in the hub, so the UDRs show intent but weren't traffic-tested. A route break/fix scenario is the next planned exercise.
+- No appliance is deployed in the hub, so the UDRs show intent but weren't traffic-tested (Lab 3 confirmed the spoke VMs have no egress because of it). A route break/fix scenario is the next planned exercise.
 - Lab 2 was torn down on 2026-11-01. A fresh rebuild from `lab2/main.bicep` is expected to work but hasn't been tested.
 - The peering rename needed a manual delete, because incremental mode doesn't delete.

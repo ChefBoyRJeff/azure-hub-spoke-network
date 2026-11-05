@@ -1,0 +1,32 @@
+=== Lab 3 M0/M1: preflight + VMs, 2026-11-05 11:17 ===
+--- 0. preflight ---
+  own profile: True  subscription: AZ104_PracticeSubscription
+  vnet-hub     10.0.0.0/16    subnets: snet-shared=10.0.1.0/26, GatewaySubnet=10.0.2.0/27  peerings: peer-hub-to-spoke1[Connected], peer-hub-to-spoke2[Connected]
+  vnet-spoke1  10.1.0.0/16    subnets: snet-workload=10.1.1.0/25  peerings: peer-spoke1-to-hub[Connected]
+  vnet-spoke2  10.2.0.0/16    subnets: snet-workload=10.2.1.0/25  peerings: peer-spoke2-to-hub[Connected]
+  spoke1 NSG rules:
+    100   Allow-HTTPS-From-Hub     Allow  src=10.0.0.0/16 ports=443
+    110   Allow-Mgmt-From-Shared   Allow  src=10.0.1.0/26 ports=System.Object[]
+    120   Allow-Intra-Subnet       Allow  src=10.1.1.0/25 ports=*
+    4000  Deny-VNet-Inbound        Deny   src=VirtualNetwork ports=*
+  spoke1 route table: 0.0.0.0/0 -> VirtualAppliance 10.0.1.4
+  D2als_v6: restrictions=''  standardDalv6Family free vCPUs=10 (need 6)
+  vnet-spoke1  10.1.1.4   available: true
+  vnet-spoke1  10.1.1.5   available: true
+  vnet-spoke1  10.1.1.10  available: true
+  vnet-hub     10.0.1.10  available: true
+--- 1. NICs (static private IPs, no public IP, no NIC-level NSG) ---
+  nic-vm-web1 10.1.1.4 exit=0
+  nic-vm-web2 10.1.1.5 exit=0
+  nic-vm-client 10.0.1.10 exit=0
+--- 2. VMs (D2als_v6, Ubuntu 24.04, random password never displayed) ---
+  vm-web1 exit=0
+  vm-web2 exit=0
+  vm-client exit=0
+--- 3. web server on each backend (idempotent, plain HTTP on 443) ---
+  vm-web1 -> local: hello from vm-web1
+  vm-web2 -> local: hello from vm-web2
+--- 4. client -> each backend DIRECTLY (before any load balancer) ---
+  direct 10.1.1.4: hello from vm-web1
+  direct 10.1.1.5: hello from vm-web2
+  correction: rule 110 ports are 22,3389 (earlier line printed System.Object[] - script join bug)

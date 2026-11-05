@@ -1,0 +1,53 @@
+=== Lab 3 M2: internal Standard Load Balancer (built in portal), 2026-11-05 11:32 ===
+--- config ---
+  sku=Standard  frontend=fe-web 10.1.1.6 (Dynamic)  zones=3,1,2
+  backend pool be-web: nic-vm-web1, nic-vm-web2
+  probe probe-web: Http port 443 path / every 5s
+  rule rule-web-443: Tcp 443 -> 443  persistence=Default  floatingIP=False
+--- TEST: 20 new connections from vm-client (hub) to the frontend 10.1.1.10:443 ---
+  20 FAILED
+--- HAIRPIN TEST: 10 connections from backend vm-web1 to its own frontend ---
+  10 TIMEOUT/FAILED
+--- health probe status per backend (DipAvailability metric, last 10 min; 100 = healthy) ---
+  backend 10.1.1.5   probe health=0%  at 11:34
+  backend 10.1.1.4   probe health=0%  at 11:34
+--- FINDING 1: frontend is 10.1.1.6 (Dynamic) - portal Assignment left at Dynamic; all tests targeted 10.1.1.10, where nothing listens. Those results are invalid for the LB. ---
+--- INCIDENT: probe health 0% on both backends. Diagnosing (no changes) ---
+  H1 IP flow verify (Network Watcher): inbound TCP 168.63.129.16 -> 10.1.1.4:443
+    access=  rule=
+  H1 effective NSG on nic-vm-web1: does Deny-VNet-Inbound's 'VirtualNetwork' include 168.63.129.16?
+    Deny-VNet-Inbound              priority=4000  access=Deny  expanded source count=1  includes 168.63.129.16: False  includes 0.0.0.0/0: False
+    AllowAzureLoadBalancerInBound  priority=65001 access=Allow expanded source count=1  includes 168.63.129.16: False  includes 0.0.0.0/0: False
+  H2 next hop for the probe reply (10.1.1.4 -> 168.63.129.16)
+    nextHopType=  nextHopIp=  route=
+  H3 + packet capture on vm-web1: is 443 listening, and do any probe packets ARRIVE in 20 s?
+    listen: 0.0.0.0:443
+    probe packets from 168.63.129.16 to :443 in 20s: 1
+    any traffic from 168.63.129.16 (all ports) in 10s: 15
+  FINDING: Network Watcher IP flow verify and next hop refuse 168.63.129.16 (IpAddressInRestrictedAddressSpace) - they can't test probe traffic
+  effective NSG returned the tag, not its expanded prefixes (count=1) - inconclusive
+  H3 ruled out: listen 0.0.0.0:443. Capture: 1 probe packet to :443 in 20s vs 15 other packets from 168.63.129.16 - probe traffic mostly dropped before the VM
+--- BEFORE fix (11:45): probe traffic on vm-web1 ---
+  packets on port 443 to/from 168.63.129.16 in 20s: 1
+  SYNs in: 0  replies out (SYN-ACK): 0  HTTP 200 sent: 0
+--- FIX A (portal): nsg-spoke1-workload + Allow-AzureLB-Probe-443 (priority 3900, AzureLoadBalancer -> 10.1.1.0/25 TCP 443) ---
+  verify rule: priority=3900 access=Allow src=AzureLoadBalancer dst=10.1.1.0/25 port=443
+--- FIX B (portal): frontend now 10.1.1.10 (Static) ---
+--- AFTER fix (11:50): probe traffic on vm-web1 ---
+  packets on port 443 to/from 168.63.129.16 in 20s: 37
+  SYNs in: 0  replies out (SYN-ACK): 4  HTTP 200 sent: 0
+--- probe health per backend (waits up to 5 min for 100) ---
+  backend 10.1.1.5   probe health=100%  at 11:50
+  backend 10.1.1.4   probe health=100%  at 11:50
+--- TEST (valid now): 20 new connections vm-client -> 10.1.1.10:443 ---
+   20 hello from vm-web2;
+--- HAIRPIN (valid now): 20 connections vm-web1 -> its own frontend 10.1.1.10:443 ---
+   6 FAILED; 14 hello from vm-web2;
+--- RESULT: H1 CONFIRMED by experiment - probe packets 1 -> 37 in 20s, SYN-ACKs 0 -> 4, health 0% -> 100% on both, after Allow-AzureLB-Probe-443 (3900). ---
+  ROOT CAUSE: Lab 1 Deny-VNet-Inbound (4000, source VirtualNetwork) also matches 168.63.129.16 (the tag includes the host virtual IP), evaluated before AllowAzureLoadBalancerInBound (65001).
+  note: SYN/HTTP-200 counters read 0 due to tcpdump flag/payload formatting in my grep; SYN-ACKs prove the SYNs arrived.
+  hairpin as expected: 14 vm-web2, 6 FAILED (flows hashed back to web1 itself), 0 vm-web1.
+  QUESTION: first client test sent 20/20 to vm-web2 (~2-in-a-million under an even split). Re-testing with 50 connections + capture on web1.
+--- RE-TEST (11:54): 50 connections vm-client -> 10.1.1.10, capture on vm-web1 at the same time ---
+  client result:  17 hello from vm-web1; 33 hello from vm-web2;
+  vm-web1 capture: client packets to :443 from 10.0.1.10 in 40s: 88

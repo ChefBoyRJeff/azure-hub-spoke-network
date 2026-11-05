@@ -1,0 +1,38 @@
+=== Lab 3 M4: Bastion Basic in the hub, 2026-11-05 12:04 ===
+--- 1. policy check: does 'Block costly lab resources' block Bastion? ---
+  assignment scope: /subscriptions/<sub>  blocks bastionHosts: True  blocks publicIPAddresses: False
+--- 2. temporary exemption (Waiver, rg-hubspoke-lab only, expires in 1 day) ---
+  create exemption exit=0  expires=2026-11-06T17:04:24Z
+--- 3. AzureBastionSubnet 10.0.3.0/26 in vnet-hub ---
+  create subnet exit=0
+--- 4. SSH key pair for Bastion (private key stays on this PC; public key to the VMs) ---
+  key created: True  type: RSA 4096 (PEM)  private key path: ~/.ssh/lab3_bastion (not in repo)
+  vm-client: authorized_keys lines=1
+  vm-web1: authorized_keys lines=1
+  vm-web2: authorized_keys lines=1
+--- Bastion create attempt 2 FAILED (12:23): reading deployment operations ---
+  deployment: Microsoft.BastionHost-mw3t1o9q  at 12:22
+  FAILED Microsoft.Network/bastionHosts/bas-hub
+    code: BastionDeploymentUnavailable
+    message: This region is not currently available for Bastion deployments due to capacity restraints. Please redeploy your Bastion resource in another region or try again later.
+--- prerequisite check ---
+  exemption ex-lab3-bastion: True
+  AzureBastionSubnet: 10.0.3.0/26
+  pip-bas-hub zones: 3,1,2
+  bas-hub state: The command requires the extension bastion. Do you want to install it now? The command will continue to run after the extension is installed. (Y/n): Failed
+  ROOT CAUSE attempt 2: BastionDeploymentUnavailable - 'This region is not currently available for Bastion deployments due to capacity restraints.' Platform capacity in eastus, not configuration (exemption, subnet, zone-redundant PIP, keys all verified).
+--- remove the failed bas-hub (keep subnet, exemption, PIP for a retry) ---
+  bas-hub state before: Failed
+  delete bas-hub exit=-1  exists now: False
+--- PREDICTION (IP flow verify, no Bastion needed): SSH from the Bastion subnet (10.0.3.4) to each VM ---
+  vm-client  10.0.1.10:22  <- 10.0.3.4  access=      rule=
+  vm-web1    10.1.1.4:22  <- 10.0.3.4  access=Deny  rule=Deny-VNet-Inbound
+  vm-web2    10.1.1.5:22  <- 10.0.3.4  access=Deny  rule=Deny-VNet-Inbound
+  control: the same test from snet-shared (10.0.1.20), which rule 110 allows
+  vm-web1    10.1.1.4:22   <- 10.0.1.20 access=Allow rule=Allow-Mgmt-From-Shared
+--- Bastion attempt 3 (portal, zones 1/2/3, existing pip-bas-hub), checked 2026-11-05 13:25 ---
+  state=Succeeded sku=Basic zones=3,1,2 scaleUnits=2 subnet=AzureBastionSubnet pip=pip-bas-hub
+--- PROOF from the VMs: sshd 'Accepted' lines (source must be 10.0.3.x = AzureBastionSubnet; usernames masked) ---
+  vm-client  2026-11-05T18:20:56.699475+00:00 vm-client sshd[2921]: Accepted publickey for <user> from 10.0.3.4 port 40662 ssh2: RSA SHA256:<fp>
+  vm-web1    2026-11-05T18:25:03.518795+00:00 vm-web1 sshd[3402]: Accepted publickey for <user> from 10.0.3.5 port 42422 ssh2: RSA SHA256:<fp>
+  leak check (should be 0): 0

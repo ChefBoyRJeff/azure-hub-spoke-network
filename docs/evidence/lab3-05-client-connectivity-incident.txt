@@ -1,0 +1,166 @@
+=== Lab 3 INCIDENT: vm-client cannot reach the LB, the backends or the internet, 2026-11-05 13:00 ===
+  SYMPTOM (12:57): from vm-client 50/50 FAILED to 10.1.1.10:443, direct 10.1.1.4 and 10.1.1.5 FAILED, internet HTTP 000. At 12:42 (after the hub VNet deploy) the same VM got 20 hello from vm-web2.
+  Backends healthy: DipAvailability 100% on both at 12:57. NSGs and route tables = code (what-if NoChange).
+  H1 Azure side (subnet/NIC/routes changed after the hub VNet PUT)  H2 test artifact (script/timeout)  H3 inside the VM (interface/firewall)
+  No changes made during diagnosis.
+--- AZ-1: hub subnets live state ---
+  snet-shared         prefix=10.0.1.0/26 defaultOutboundAccess=False nsg=False routeTable=False serviceEndpoints=0 ipConfigs=1 state=Succeeded
+  AzureBastionSubnet  prefix=10.0.3.0/26 defaultOutboundAccess= nsg=False routeTable=False serviceEndpoints=0 ipConfigs=0 state=Succeeded
+--- AZ-2: vm-client VM and NIC ---
+  power=VM running  nic state=Succeeded  ip=10.0.1.10 (Static)  subnet=snet-shared  nsg on nic=False  publicIP=False
+--- AZ-3: vm-client effective routes ---
+  Default  Active   10.0.0.0/16            -> VnetLocal 
+  Default  Active   10.1.0.0/16            -> VNetPeering 
+  Default  Active   10.2.0.0/16            -> VNetPeering 
+  Default  Active   0.0.0.0/0              -> Internet 
+  Default  Active   10.0.0.0/8             -> None 
+  Default  Active   127.0.0.0/8            -> None 
+  Default  Active   100.96.0.0/11          -> None 
+  Default  Active   172.16.0.0/12          -> None 
+  Default  Active   100.64.0.0/12          -> None 
+  Default  Active   25.176.0.0/13          -> None 
+  Default  Active   100.80.0.0/13          -> None 
+  Default  Active   100.92.0.0/14          -> None 
+  Default  Active   25.4.0.0/14            -> None 
+  Default  Active   25.184.0.0/14          -> None 
+  Default  Active   25.152.0.0/14          -> None 
+  Default  Active   198.18.0.0/15          -> None 
+  Default  Active   25.148.0.0/15          -> None 
+  Default  Active   192.168.0.0/16         -> None 
+  Default  Active   104.147.0.0/16         -> None 
+  Default  Active   25.159.0.0/16          -> None 
+  Default  Active   25.156.0.0/16          -> None 
+  Default  Active   157.59.0.0/16          -> None 
+  Default  Active   25.150.0.0/16          -> None 
+  Default  Active   40.109.0.0/16          -> None 
+  Default  Active   104.146.0.0/17         -> None 
+  Default  Active   100.91.128.0/17        -> None 
+  Default  Active   100.90.0.0/17          -> None 
+  Default  Active   100.89.128.0/17        -> None 
+  Default  Active   40.108.0.0/17          -> None 
+  Default  Active   100.88.128.0/17        -> None 
+  Default  Active   100.91.64.0/18         -> None 
+  Default  Active   100.90.128.0/18        -> None 
+  Default  Active   23.103.0.0/18          -> None 
+  Default  Active   100.89.96.0/19         -> None 
+  Default  Active   100.88.32.0/19         -> None 
+  Default  Active   100.89.32.0/19         -> None 
+  Default  Active   100.91.0.0/19          -> None 
+  Default  Active   100.90.224.0/19        -> None 
+  Default  Active   100.88.64.0/19         -> None 
+  Default  Active   100.90.192.0/20        -> None 
+  Default  Active   100.89.80.0/20         -> None 
+  Default  Active   100.91.48.0/20         -> None 
+  Default  Active   100.88.112.0/20        -> None 
+  Default  Active   100.88.16.0/20         -> None 
+  Default  Active   100.90.208.0/21        -> None 
+  Default  Active   100.88.96.0/21         -> None 
+  Default  Active   100.89.8.0/21          -> None 
+  Default  Active   100.88.8.0/21          -> None 
+  Default  Active   100.91.32.0/21         -> None 
+  Default  Active   100.89.24.0/21         -> None 
+  Default  Active   100.89.72.0/22         -> None 
+  Default  Active   100.90.216.0/22        -> None 
+  Default  Active   100.91.40.0/22         -> None 
+  Default  Active   20.35.252.0/22         -> None 
+  Default  Active   100.88.108.0/22        -> None 
+  Default  Active   100.88.4.0/22          -> None 
+  Default  Active   100.89.4.0/22          -> None 
+  Default  Active   100.89.16.0/22         -> None 
+  Default  Active   100.89.64.0/22         -> None 
+  Default  Active   100.89.20.0/23         -> None 
+  Default  Active   100.89.78.0/23         -> None 
+  Default  Active   100.90.222.0/23        -> None 
+  Default  Active   100.88.104.0/23        -> None 
+  Default  Active   100.91.46.0/23         -> None 
+  Default  Active   100.89.0.0/23          -> None 
+  Default  Active   100.89.70.0/23         -> None 
+  Default  Active   100.88.0.0/23          -> None 
+  Default  Active   100.88.107.0/24        -> None 
+  Default  Active   100.91.44.0/24         -> None 
+  Default  Active   100.89.68.0/24         -> None 
+  Default  Active   100.89.23.0/24         -> None 
+  Default  Active   100.88.2.0/24          -> None 
+  Default  Active   100.89.3.0/24          -> None 
+  Default  Active   100.89.76.0/24         -> None 
+  Default  Active   100.90.220.0/24        -> None 
+  Default  Active   100.88.3.128/25        -> None 
+  Default  Active   100.89.77.128/25       -> None 
+  Default  Active   100.89.2.128/25        -> None 
+  Default  Active   100.90.221.0/25        -> None 
+  Default  Active   100.88.106.0/25        -> None 
+  Default  Active   100.89.69.128/25       -> None 
+  Default  Active   100.89.2.0/26          -> None 
+  Default  Active   100.88.106.128/26      -> None 
+  Default  Active   100.90.221.128/26      -> None 
+  Default  Active   100.89.77.0/26         -> None 
+  Default  Active   100.88.3.64/26         -> None 
+  Default  Active   100.88.3.32/27         -> None 
+  Default  Active   100.90.221.224/27      -> None 
+  Default  Active   100.89.77.64/27        -> None 
+  Default  Active   100.88.106.224/27      -> None 
+  Default  Active   100.89.2.64/27         -> None 
+  Default  Active   100.89.77.112/28       -> None 
+  Default  Active   100.89.77.96/29        -> None 
+--- AZ-4: next hop vm-client 10.0.1.10 -> 10.1.1.4 ---
+  nextHopType=VirtualNetworkPeering nextHopIp= route=System Route
+--- AZ-5: IP flow verify inbound on vm-web1 from vm-client (10.0.1.10 -> 10.1.1.4:443) ---
+  access=Allow rule=Allow-HTTPS-From-Hub
+--- AZ-6: activity log writes in the RG, last 60 min (caller omitted) ---
+  12:43:01  Succeeded Microsoft.Network/routeTables/write                          rt-spoke1-workload
+  12:43:02  Succeeded Microsoft.Network/virtualNetworks/write                      vnet-spoke1
+  12:43:02  Succeeded Microsoft.Network/networkSecurityGroups/write                nsg-spoke1-workload
+  12:43:02  Succeeded Microsoft.Network/virtualNetworks/virtualNetworkPeerings/write peer-spoke1-to-hub
+  12:43:03  Succeeded Microsoft.Resources/deployments/write                        deploy-spoke1
+  12:43:04  Succeeded Microsoft.Resources/deployments/write                        deploy-spoke2
+  12:43:04  Succeeded Microsoft.Network/virtualNetworks/virtualNetworkPeerings/write peer-hub-to-spoke1
+  12:43:05  Succeeded Microsoft.Network/routeTables/write                          rt-spoke2-workload
+  12:43:06  Succeeded Microsoft.Network/virtualNetworks/write                      vnet-spoke2
+  12:43:06  Succeeded Microsoft.Network/virtualNetworks/virtualNetworkPeerings/write peer-spoke2-to-hub
+  12:43:06  Succeeded Microsoft.Resources/deployments/write                        deploy-spoke2
+  12:43:08  Succeeded Microsoft.Network/virtualNetworks/virtualNetworkPeerings/write peer-hub-to-spoke2
+  12:43:08  Succeeded Microsoft.Resources/deployments/write                        lab3-main-202611051242
+  12:43:08  Succeeded Microsoft.Network/networkSecurityGroups/write                nsg-spoke2-workload
+  12:44:15  Succeeded Microsoft.Compute/virtualMachines/runCommand/action          vm-client
+  12:53:22  Succeeded Microsoft.Authorization/policies/auditIfNotExists/action     vnet-hub
+  12:53:24  Succeeded Microsoft.Authorization/policies/audit/action                vnet-hub
+  12:53:24  Succeeded Microsoft.Authorization/policies/auditIfNotExists/action     vnet-hub
+  12:53:41  Succeeded Microsoft.Authorization/policies/audit/action                vnet-spoke1
+  12:53:41  Succeeded Microsoft.Authorization/policies/auditIfNotExists/action     vnet-spoke1
+  12:53:46  Succeeded Microsoft.Authorization/policies/auditIfNotExists/action     vnet-spoke2
+  12:53:47  Succeeded Microsoft.Authorization/policies/auditIfNotExists/action     vnet-spoke1
+  12:53:58  Succeeded Microsoft.Authorization/policies/audit/action                vnet-spoke2
+  12:53:58  Succeeded Microsoft.Authorization/policies/auditIfNotExists/action     vnet-spoke2
+  12:57:37  Succeeded Microsoft.Compute/virtualMachines/runCommand/action          vm-client
+--- VM-1 (H2/H3): inside vm-client - interface, routes, firewall, then TCP tests with 10 s timeouts and exit codes ---
+    ip: 10.0.1.10/26
+    route: default via 10.0.1.1 dev eth0 proto dhcp src 10.0.1.10 metric 100
+    route: 10.0.1.0/26 dev eth0 proto kernel scope link src 10.0.1.10 metric 100
+    route: 10.0.1.1 dev eth0 proto dhcp scope link src 10.0.1.10 metric 100
+    route: 168.63.129.16 via 10.0.1.1 dev eth0 proto dhcp src 10.0.1.10 metric 100
+    firewall: ufw=Status: inactive iptables_rules=3 nft_lines=8
+    backend 10.1.1.4:443  http=000 connect=0.002383s  curl_exit=35
+    frontend 10.1.1.10:443 http=000 connect=0.010820s  curl_exit=35
+    dns www.microsoft.com: 2600:1408:c400:f93::356e
+    internet microsoft.com  http=000  curl_exit=28
+    wireserver 168.63.129.16 http=200  curl_exit=0
+--- VM-2 (H2 control): the same backend test from vm-web2 (spoke1, same subnet as web1) ---
+    backend 10.1.1.4:443  http=000 connect=0.002580s  curl_exit=35
+    internet microsoft.com  http=000  curl_exit=28
+  curl exit codes: 0=ok  6=DNS failed  7=connection refused  28=timeout  35=TLS error
+--- ANALYSIS ---
+  TCP connected in ~2 ms from BOTH vm-client and the control vm-web2, then curl exit 35 (TLS error). Routes, next hop, NSG (Allow-HTTPS-From-Hub), guest firewall all fine; no RG writes after the 12:43 deploy.
+  ROOT CAUSE (test artifact, H2 confirmed): the backends serve PLAIN HTTP on port 443 (probe-web is Http:443 and reports 100%). The 12:57 script used https://, so curl attempted a TLS handshake against a non-TLS server. Not a network fault.
+  Internet egress: exit 28 (timeout) from both subnets = expected for private subnets with no explicit outbound method (NAT gateway / public IP). Wireserver 168.63.129.16 = 200, so platform access (Run Command) is unaffected.
+  RETRACTION of 'CORRECTION 2' in lab3-04: what-if pass 3 still shows subnets[0] + defaultOutboundAccess:false after snet-shared was declared false and reads False live, so that line is AzureBastionSubnet (what-if sorts subnets by name, as with NSG rules). The 12:42 deploy did not make snet-shared private; it was already private, consistent with vm-client having no default outbound.
+--- RE-TEST with the correct protocol (http:// on port 443), 13:03 ---
+    == 50 new connections to the frontend http://10.1.1.10:443 ==
+         20 hello from vm-web1
+         30 hello from vm-web2
+    == each backend directly ==
+    10.1.1.4 -> hello from vm-web1
+    10.1.1.5 -> hello from vm-web2
+    == control: the same frontend with https:// (expect exit 35 = protocol mismatch) ==
+    https curl_exit=35
+  LESSON: match the test to the service's real protocol - read the probe/listener config before writing the test, and treat exit 35 after a successful TCP connect as 'wrong protocol', not 'network down'.
+  NOTE (correction): the spoke VM's internet timeout is explained by the spoke route table (0.0.0.0/0 -> VirtualAppliance 10.0.1.4, no appliance deployed; see lab3-00 preflight), not by a private subnet. The hub client's timeout is the private snet-shared.

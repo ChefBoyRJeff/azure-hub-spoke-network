@@ -12,6 +12,8 @@ param tags object = {
 var hubAddressSpace = '10.0.0.0/16'
 var hubSharedSubnetPrefix = '10.0.1.0/26'
 var hubGatewaySubnetPrefix = '10.0.2.0/27'
+var hubBastionSubnetPrefix = '10.0.3.0/26' // Lab 3 Bastion range. Subnet removed at teardown; kept so
+                                            // spoke rule Allow-SSH-From-Bastion stays ready for a redeploy
 var nvaIpAddress = '10.0.1.4'
 
 var spokes = [
@@ -38,11 +40,16 @@ resource hubVnet 'Microsoft.Network/virtualNetworks@2026-01-01' = {
         hubAddressSpace
       ]
     }
+    // Platform default, declared so what-if stays clean (same finding as P3 RCA-002)
+    privateEndpointVNetPolicies: 'Disabled'
     subnets: [
       {
         name: 'snet-shared'
         properties: {
           addressPrefix: hubSharedSubnetPrefix
+          // Private subnet: no implicit internet egress (live value was already false).
+          // Declared on purpose so the intent is in code, not an API-version default.
+          defaultOutboundAccess: false
         }
       }
       {
@@ -68,6 +75,7 @@ module spokeModules 'modules/spoke.bicep' = [for spoke in spokes: {
     hubVnetId: hubVnet.id
     hubAddressSpace: hubAddressSpace
     hubSharedSubnetPrefix: hubSharedSubnetPrefix
+    hubBastionSubnetPrefix: hubBastionSubnetPrefix
     nvaIpAddress: nvaIpAddress
   }
 }]

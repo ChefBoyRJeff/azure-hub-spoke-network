@@ -1,0 +1,26 @@
+=== Lab 3 M3: failover (app crash on vm-web2 while traffic flows), 2026-11-05 11:56 ===
+  carried forward: distribution re-test 17 vm-web1 / 33 vm-web2 (88 client packets seen on web1) - the first 20/0 split was timing right after web1 turned healthy; hash-based, not round-robin
+  probe: Http 443 every 5s, probeThreshold=1
+--- running: client loop 120s (UTC timestamps), stop web2 at ~+20s, start web2 at ~+75s ---
+--- events on vm-web2 ---
+  stopped lab3-web at 16:57:01 UTC: inactive
+  started lab3-web at 16:58:17 UTC: active
+--- client view: only the moments the responder changed (UTC) ---
+  totals:
+  RUN 1 INVALID: client loop never ran - Run Command executes scripts with /bin/sh, and the loop used bash-only $SECONDS (empty under sh). web2 stop 16:57:01 / start 16:58:17 UTC happened with no client traffic. Re-running with date +%s timing.
+--- RUN 2 (12:00): client loop 120s (UTC), stop web2 at ~+20s, start web2 at ~+75s ---
+--- events on vm-web2 ---
+  stopped lab3-web at 17:01:12 UTC: inactive
+  started lab3-web at 17:02:21 UTC: active
+--- client view: only the moments the responder changed (UTC) ---
+  17:00:38 -> hello from vm-web2
+  17:00:44 -> hello from vm-web1
+  17:00:57 -> hello from vm-web2
+  17:01:07 -> hello from vm-web1
+  17:01:09 -> hello from vm-web2
+  17:01:13 -> FAILED
+  17:01:19 -> hello from vm-web1
+  17:02:27 -> hello from vm-web2
+  17:02:37 -> hello from vm-web1
+  totals:  6 FAILED; 83 hello from vm-web1; 30 hello from vm-web2;
+--- RESULT RUN 2: stop 17:01:12 -> first FAILED 17:01:13 -> web1 only from 17:01:19 (~7 s); start 17:02:21 -> web2 back 17:02:27 (~6 s); 6 FAILED / 119 (all inside the window). probe 5s, threshold 1. Note: the 6 failures were consecutive (~1-in-60 under a 50/50 hash) - recorded, not concluded. ---

@@ -1,0 +1,714 @@
+=== Lab 3 M5: Bicep vs live (what-if only), 2026-11-05 12:39 ===
+  carried forward (M4): IP flow verify SSH from 10.0.3.4 -> web1/web2 Deny (Deny-VNet-Inbound); control from 10.0.1.20 Allow (Allow-Mgmt-From-Shared); vm-client NsgsNotAppliedOnNic = hub snet-shared has NO NSG (Lab 1 gap).
+--- main.bicep (network + NSG fixes): bicep build exit=0 ---
+  what-if exit=0
+    ~ Microsoft.Network/networkSecurityGroups/nsg-spoke1-workload [2026-01-01]
+      ~ properties.securityRules: [
+        + 4:
+    ~ Microsoft.Network/networkSecurityGroups/nsg-spoke2-workload [2026-01-01]
+      ~ properties.securityRules: [
+        ~ 0:
+          ~ name:                           "Allow-HTTPS-From-Hub" => "Allow-AzureLB-Probe-443"
+          ~ properties.priority:            100 => 3900
+          ~ properties.sourceAddressPrefix: "10.0.0.0/16" => "AzureLoadBalancer"
+        ~ 1:
+          ~ name:                            "Allow-Intra-Subnet" => "Allow-HTTPS-From-Hub"
+          ~ properties.destinationPortRange: "*" => "443"
+          ~ properties.priority:             120 => 100
+          ~ properties.protocol:             "*" => "Tcp"
+          ~ properties.sourceAddressPrefix:  "10.2.1.0/25" => "10.0.0.0/16"
+        ~ 2:
+          - properties.destinationPortRanges: [
+          + properties.destinationPortRange: "*"
+          ~ name:                            "Allow-Mgmt-From-Shared" => "Allow-Intra-Subnet"
+          ~ properties.priority:             110 => 120
+          ~ properties.protocol:             "Tcp" => "*"
+          ~ properties.sourceAddressPrefix:  "10.0.1.0/26" => "10.2.1.0/25"
+        + 3:
+        + 4:
+    ~ Microsoft.Network/virtualNetworks/vnet-hub [2026-01-01]
+      - properties.privateEndpointVNetPolicies:    "Disabled"
+      ~ properties.subnets: [
+        ~ 0:
+          + properties.defaultOutboundAccess: false
+      ~ properties.virtualNetworkPeerings: [
+        ~ 0:
+          - properties.doNotVerifyRemoteGateways: false
+          - properties.peerCompleteVnets:         true
+          - properties.peeringSyncLevel:          "FullyInSync"
+          - properties.remoteAddressSpace:
+          - properties.remoteVirtualNetworkAddressSpace:
+        ~ 1:
+          - properties.doNotVerifyRemoteGateways: false
+          - properties.peerCompleteVnets:         true
+          - properties.peeringSyncLevel:          "FullyInSync"
+          - properties.remoteAddressSpace:
+          - properties.remoteVirtualNetworkAddressSpace:
+      x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+      x properties.virtualNetworkPeerings[1].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+    ~ Microsoft.Network/virtualNetworks/vnet-hub/virtualNetworkPeerings/peer-hub-to-spoke1 [2026-01-01]
+      - properties.doNotVerifyRemoteGateways: false
+      - properties.peerCompleteVnets:         true
+      - properties.peeringSyncLevel:          "FullyInSync"
+      - properties.remoteAddressSpace:
+      - properties.remoteVirtualNetworkAddressSpace:
+    ~ Microsoft.Network/virtualNetworks/vnet-hub/virtualNetworkPeerings/peer-hub-to-spoke2 [2026-01-01]
+      - properties.doNotVerifyRemoteGateways: false
+      - properties.peerCompleteVnets:         true
+      - properties.peeringSyncLevel:          "FullyInSync"
+      - properties.remoteAddressSpace:
+      - properties.remoteVirtualNetworkAddressSpace:
+    ~ Microsoft.Network/virtualNetworks/vnet-spoke1 [2026-01-01]
+      - properties.privateEndpointVNetPolicies:    "Disabled"
+      ~ properties.virtualNetworkPeerings: [
+        ~ 0:
+          - properties.doNotVerifyRemoteGateways: false
+          - properties.peerCompleteVnets:         true
+          - properties.peeringSyncLevel:          "FullyInSync"
+          - properties.remoteAddressSpace:
+          - properties.remoteVirtualNetworkAddressSpace:
+      x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+    ~ Microsoft.Network/virtualNetworks/vnet-spoke1/virtualNetworkPeerings/peer-spoke1-to-hub [2026-01-01]
+      - properties.doNotVerifyRemoteGateways: false
+      - properties.peerCompleteVnets:         true
+      - properties.peeringSyncLevel:          "FullyInSync"
+      - properties.remoteAddressSpace:
+      - properties.remoteVirtualNetworkAddressSpace:
+    ~ Microsoft.Network/virtualNetworks/vnet-spoke2 [2026-01-01]
+      - properties.privateEndpointVNetPolicies:    "Disabled"
+      ~ properties.virtualNetworkPeerings: [
+        ~ 0:
+          - properties.doNotVerifyRemoteGateways: false
+          - properties.peerCompleteVnets:         true
+          - properties.peeringSyncLevel:          "FullyInSync"
+          - properties.remoteAddressSpace:
+          - properties.remoteVirtualNetworkAddressSpace:
+      x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+    ~ Microsoft.Network/virtualNetworks/vnet-spoke2/virtualNetworkPeerings/peer-spoke2-to-hub [2026-01-01]
+      - properties.doNotVerifyRemoteGateways: false
+      - properties.peerCompleteVnets:         true
+      - properties.peeringSyncLevel:          "FullyInSync"
+      - properties.remoteAddressSpace:
+      - properties.remoteVirtualNetworkAddressSpace:
+    = Microsoft.Network/routeTables/rt-spoke1-workload [2026-01-01]
+    = Microsoft.Network/routeTables/rt-spoke2-workload [2026-01-01]
+    * Microsoft.Compute/disks/vm-client_OsDisk_1_5f93faca1e4d4a6e83bf9568a233af84
+    * Microsoft.Compute/disks/vm-web1_OsDisk_1_cc5d9ba898d64dbda74fe8066110c2bb
+    * Microsoft.Compute/disks/vm-web2_OsDisk_1_f4556366e6f04595860d15e6f3433320
+    * Microsoft.Compute/virtualMachines/vm-client
+    * Microsoft.Compute/virtualMachines/vm-web1
+    * Microsoft.Compute/virtualMachines/vm-web2
+    * Microsoft.Network/loadBalancers/lb-spoke1-web
+    * Microsoft.Network/networkInterfaces/nic-vm-client
+    * Microsoft.Network/networkInterfaces/nic-vm-web1
+    * Microsoft.Network/networkInterfaces/nic-vm-web2
+    * Microsoft.Network/publicIPAddresses/pip-bas-hub
+  Resource changes: 9 to modify, 2 no change, 11 to ignore.
+--- lab3/lb.bicep (load balancer + NICs): bicep build exit=0 ---
+  what-if exit=0
+    ~ Microsoft.Network/loadBalancers/lb-spoke1-web [2024-05-01]
+      + tags:
+      ~ properties.backendAddressPools: [
+        ~ 0:
+          - properties:
+      ~ properties.frontendIPConfigurations: [
+        ~ 0:
+          ~ zones: [
+            + 0: "1"
+            - 1: "1"
+            + 1: "2"
+            - 2: "2"
+      ~ properties.loadBalancingRules: [
+        ~ 0:
+          - properties.allowBackendPortConflict:         false
+          - properties.backendAddressPools: [
+          - properties.disableConnectionTracking:        false
+          - properties.disableOutboundSnat:              true
+          - properties.enableConnectionTracking:         false
+          - properties.enableDestinationServiceEndpoint: false
+      ~ properties.probes: [
+        ~ 0:
+          - properties.noHealthyBackendsBehavior: "AllProbedDown"
+          ~ properties.numberOfProbes:            1 => 2
+    ~ Microsoft.Network/networkInterfaces/nic-vm-web1 [2024-05-01]
+      - kind:                                                                      "Regular"
+      - properties.allowPort25Out:                                                 false
+      - properties.auxiliaryMode:                                                  "None"
+      - properties.auxiliarySku:                                                   "None"
+      - properties.disableTcpStateTracking:                                        false
+      ~ properties.ipConfigurations: [
+        ~ 0:
+          - properties.privateIPAddressVersion: "IPv4"
+      x properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools: [
+      x properties.ipConfigurations[0].properties.primary:                         true
+    ~ Microsoft.Network/networkInterfaces/nic-vm-web2 [2024-05-01]
+      - kind:                                                                      "Regular"
+      - properties.allowPort25Out:                                                 false
+      - properties.auxiliaryMode:                                                  "None"
+      - properties.auxiliarySku:                                                   "None"
+      - properties.disableTcpStateTracking:                                        false
+      ~ properties.ipConfigurations: [
+        ~ 0:
+          - properties.privateIPAddressVersion: "IPv4"
+      x properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools: [
+      x properties.ipConfigurations[0].properties.primary:                         true
+    * Microsoft.Compute/disks/vm-client_OsDisk_1_5f93faca1e4d4a6e83bf9568a233af84
+    * Microsoft.Compute/disks/vm-web1_OsDisk_1_cc5d9ba898d64dbda74fe8066110c2bb
+    * Microsoft.Compute/disks/vm-web2_OsDisk_1_f4556366e6f04595860d15e6f3433320
+    * Microsoft.Compute/virtualMachines/vm-client
+    * Microsoft.Compute/virtualMachines/vm-web1
+    * Microsoft.Compute/virtualMachines/vm-web2
+    * Microsoft.Network/networkInterfaces/nic-vm-client
+    * Microsoft.Network/networkSecurityGroups/nsg-spoke1-workload
+    * Microsoft.Network/networkSecurityGroups/nsg-spoke2-workload
+    * Microsoft.Network/publicIPAddresses/pip-bas-hub
+    * Microsoft.Network/routeTables/rt-spoke1-workload
+    * Microsoft.Network/routeTables/rt-spoke2-workload
+    * Microsoft.Network/virtualNetworks/vnet-hub
+    * Microsoft.Network/virtualNetworks/vnet-spoke1
+    * Microsoft.Network/virtualNetworks/vnet-spoke2
+  Resource changes: 3 to modify, 15 to ignore.
+--- TRIAGE pass 1 ---
+  intended: spoke1 +Allow-SSH-From-Bastion; spoke2 +2 rules (index shifts are name-sorted array display, net +2)
+  REAL (code): privateEndpointVNetPolicies undeclared default on 3 VNets -> declared (P3 RCA-002 again)
+  REAL (code): probe numberOfProbes portal=1, undeclared default=2 -> declared 1; disableOutboundSnat true declared to match
+  REAL (live): LB untagged (portal) -> template adds tags
+  EXPECTED: AzureBastionSubnet +defaultOutboundAccess false - API 2026-01-01 makes undeclared subnets private; Bastion egresses via its own public IP
+  NOISE: peering read-only/status props, zone order, NIC read-only props, x Noeffect
+--- PASS 2 main.bicep: build exit=0 ---
+    ~ Microsoft.Network/networkSecurityGroups/nsg-spoke1-workload [2026-01-01]
+      ~ properties.securityRules: [
+        + 4:
+    ~ Microsoft.Network/networkSecurityGroups/nsg-spoke2-workload [2026-01-01]
+      ~ properties.securityRules: [
+        ~ 0:
+          ~ name:                           "Allow-HTTPS-From-Hub" => "Allow-AzureLB-Probe-443"
+          ~ properties.priority:            100 => 3900
+          ~ properties.sourceAddressPrefix: "10.0.0.0/16" => "AzureLoadBalancer"
+        ~ 1:
+          ~ name:                            "Allow-Intra-Subnet" => "Allow-HTTPS-From-Hub"
+          ~ properties.destinationPortRange: "*" => "443"
+          ~ properties.priority:             120 => 100
+          ~ properties.protocol:             "*" => "Tcp"
+          ~ properties.sourceAddressPrefix:  "10.2.1.0/25" => "10.0.0.0/16"
+        ~ 2:
+          - properties.destinationPortRanges: [
+          + properties.destinationPortRange: "*"
+          ~ name:                            "Allow-Mgmt-From-Shared" => "Allow-Intra-Subnet"
+          ~ properties.priority:             110 => 120
+          ~ properties.protocol:             "Tcp" => "*"
+          ~ properties.sourceAddressPrefix:  "10.0.1.0/26" => "10.2.1.0/25"
+        + 3:
+        + 4:
+    ~ Microsoft.Network/virtualNetworks/vnet-hub [2026-01-01]
+      - properties.privateEndpointVNetPolicies:    "Disabled"
+      ~ properties.subnets: [
+        ~ 0:
+          + properties.defaultOutboundAccess: false
+      ~ properties.virtualNetworkPeerings: [
+        ~ 0:
+          - properties.doNotVerifyRemoteGateways: false
+          - properties.peerCompleteVnets:         true
+          - properties.peeringSyncLevel:          "FullyInSync"
+          - properties.remoteAddressSpace:
+          - properties.remoteVirtualNetworkAddressSpace:
+        ~ 1:
+          - properties.doNotVerifyRemoteGateways: false
+          - properties.peerCompleteVnets:         true
+          - properties.peeringSyncLevel:          "FullyInSync"
+          - properties.remoteAddressSpace:
+          - properties.remoteVirtualNetworkAddressSpace:
+      x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+      x properties.virtualNetworkPeerings[1].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+    ~ Microsoft.Network/virtualNetworks/vnet-hub/virtualNetworkPeerings/peer-hub-to-spoke1 [2026-01-01]
+      - properties.doNotVerifyRemoteGateways: false
+      - properties.peerCompleteVnets:         true
+      - properties.peeringSyncLevel:          "FullyInSync"
+      - properties.remoteAddressSpace:
+      - properties.remoteVirtualNetworkAddressSpace:
+    ~ Microsoft.Network/virtualNetworks/vnet-hub/virtualNetworkPeerings/peer-hub-to-spoke2 [2026-01-01]
+      - properties.doNotVerifyRemoteGateways: false
+      - properties.peerCompleteVnets:         true
+      - properties.peeringSyncLevel:          "FullyInSync"
+      - properties.remoteAddressSpace:
+      - properties.remoteVirtualNetworkAddressSpace:
+    ~ Microsoft.Network/virtualNetworks/vnet-spoke1 [2026-01-01]
+      - properties.privateEndpointVNetPolicies:    "Disabled"
+      ~ properties.virtualNetworkPeerings: [
+        ~ 0:
+          - properties.doNotVerifyRemoteGateways: false
+          - properties.peerCompleteVnets:         true
+          - properties.peeringSyncLevel:          "FullyInSync"
+          - properties.remoteAddressSpace:
+          - properties.remoteVirtualNetworkAddressSpace:
+      x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+    ~ Microsoft.Network/virtualNetworks/vnet-spoke1/virtualNetworkPeerings/peer-spoke1-to-hub [2026-01-01]
+      - properties.doNotVerifyRemoteGateways: false
+      - properties.peerCompleteVnets:         true
+      - properties.peeringSyncLevel:          "FullyInSync"
+      - properties.remoteAddressSpace:
+      - properties.remoteVirtualNetworkAddressSpace:
+    ~ Microsoft.Network/virtualNetworks/vnet-spoke2 [2026-01-01]
+      - properties.privateEndpointVNetPolicies:    "Disabled"
+      ~ properties.virtualNetworkPeerings: [
+        ~ 0:
+          - properties.doNotVerifyRemoteGateways: false
+          - properties.peerCompleteVnets:         true
+          - properties.peeringSyncLevel:          "FullyInSync"
+          - properties.remoteAddressSpace:
+          - properties.remoteVirtualNetworkAddressSpace:
+      x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+    ~ Microsoft.Network/virtualNetworks/vnet-spoke2/virtualNetworkPeerings/peer-spoke2-to-hub [2026-01-01]
+      - properties.doNotVerifyRemoteGateways: false
+      - properties.peerCompleteVnets:         true
+      - properties.peeringSyncLevel:          "FullyInSync"
+      - properties.remoteAddressSpace:
+      - properties.remoteVirtualNetworkAddressSpace:
+    = Microsoft.Network/routeTables/rt-spoke1-workload [2026-01-01]
+    = Microsoft.Network/routeTables/rt-spoke2-workload [2026-01-01]
+  Resource changes: 9 to modify, 2 no change, 11 to ignore.
+--- PASS 2 lab3/lb.bicep: build exit=0 ---
+    ~ Microsoft.Network/loadBalancers/lb-spoke1-web [2024-05-01]
+      + tags:
+      ~ properties.backendAddressPools: [
+        ~ 0:
+          - properties:
+      ~ properties.frontendIPConfigurations: [
+        ~ 0:
+          ~ zones: [
+            + 0: "1"
+            - 1: "1"
+            + 1: "2"
+            - 2: "2"
+      ~ properties.loadBalancingRules: [
+        ~ 0:
+          - properties.allowBackendPortConflict:         false
+          - properties.backendAddressPools: [
+          - properties.disableConnectionTracking:        false
+          - properties.disableOutboundSnat:              true
+          - properties.enableConnectionTracking:         false
+          - properties.enableDestinationServiceEndpoint: false
+      ~ properties.probes: [
+        ~ 0:
+          - properties.noHealthyBackendsBehavior: "AllProbedDown"
+          ~ properties.numberOfProbes:            1 => 2
+    ~ Microsoft.Network/networkInterfaces/nic-vm-web1 [2024-05-01]
+      - kind:                                                                      "Regular"
+      - properties.allowPort25Out:                                                 false
+      - properties.auxiliaryMode:                                                  "None"
+      - properties.auxiliarySku:                                                   "None"
+      - properties.disableTcpStateTracking:                                        false
+      ~ properties.ipConfigurations: [
+        ~ 0:
+          - properties.privateIPAddressVersion: "IPv4"
+      x properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools: [
+      x properties.ipConfigurations[0].properties.primary:                         true
+    ~ Microsoft.Network/networkInterfaces/nic-vm-web2 [2024-05-01]
+      - kind:                                                                      "Regular"
+      - properties.allowPort25Out:                                                 false
+      - properties.auxiliaryMode:                                                  "None"
+      - properties.auxiliarySku:                                                   "None"
+      - properties.disableTcpStateTracking:                                        false
+      ~ properties.ipConfigurations: [
+        ~ 0:
+          - properties.privateIPAddressVersion: "IPv4"
+      x properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools: [
+      x properties.ipConfigurations[0].properties.primary:                         true
+  Resource changes: 3 to modify, 15 to ignore.
+  resource deletions planned: 0
+--- DEPLOY main.bicep (12:42) - applies the Bastion SSH fix through code ---
+  deploy exit=0
+--- VERIFY after deploy ---
+  SSH 10.0.3.4 -> vm-web1 10.1.1.4:22  access=Allow rule=Allow-SSH-From-Bastion
+  SSH 10.0.3.4 -> vm-web2 10.1.1.5:22  access=Allow rule=Allow-SSH-From-Bastion
+  spoke2 rules now: Allow-AzureLB-Probe-443, Allow-HTTPS-From-Hub, Allow-Intra-Subnet, Allow-Mgmt-From-Shared, Allow-SSH-From-Bastion, Deny-VNet-Inbound
+  AzureBastionSubnet defaultOutboundAccess=  snet-shared defaultOutboundAccess=false
+  LB still serving after deploy:  20 hello from vm-web2;
+--- CORRECTION to the 12:42 deploy (found by inspecting the files on disk afterwards) ---
+  1. The deploy ran from the FIRST-round files: the second-round side files were not in place, and the block's guard only checked for planned deletions. NSG rules were correct; privateEndpointVNetPolicies was still undeclared.
+  2. What-if 'subnets[0] + defaultOutboundAccess: false' was snet-shared (template order), not AzureBastionSubnet. The deploy made snet-shared a PRIVATE subnet (API 2026-01-01 default for an undeclared value).
+  Decision: keep snet-shared private (secure default) and declare it in code. Existing vm-client keeps default outbound until it is deallocated.
+=== Lab 3 M5 continued: re-sync code, probe health, what-if pass 3, 2026-11-05 12:53 ===
+--- file checks (ALL must be True, otherwise nothing runs against Azure) ---
+  main.bicep: hub privateEndpointVNetPolicies          True
+  main.bicep: snet-shared defaultOutboundAccess false  False
+  main.bicep: AzureBastionSubnet declared              True
+  spoke.bicep: privateEndpointVNetPolicies             True
+  spoke.bicep: Allow-SSH-From-Bastion                  True
+  spoke.bicep: Allow-AzureLB-Probe-443                 True
+  lb.bicep: numberOfProbes 1                           True
+  lb.bicep: disableOutboundSnat true                   True
+  no side files left                                   True
+  bicep build main.bicep                               True
+  bicep build lab3\lb.bicep                            True
+  STOP: a file check failed - nothing was run against Azure.
+  GUARD WORKED (12:53): main.bicep lacked defaultOutboundAccess - the v3 copy was sent before the edit finished. Re-sent as v4 (verified 3308 bytes on disk).
+=== Lab 3 M5 continued (retry): re-sync code, probe health, what-if pass 3, 2026-11-05 12:57 ===
+  main.bicep size now: 3308 bytes (expected 3308)
+--- file checks (ALL must be True, otherwise nothing runs against Azure) ---
+  main.bicep: hub privateEndpointVNetPolicies          True
+  main.bicep: snet-shared defaultOutboundAccess false  True
+  main.bicep: AzureBastionSubnet declared              True
+  spoke.bicep: privateEndpointVNetPolicies             True
+  spoke.bicep: Allow-SSH-From-Bastion                  True
+  spoke.bicep: Allow-AzureLB-Probe-443                 True
+  lb.bicep: numberOfProbes 1                           True
+  lb.bicep: disableOutboundSnat true                   True
+  no side files left                                   True
+  bicep build main.bicep                               True
+  bicep build lab3\lb.bicep                            True
+--- probe health per backend (DipAvailability, last 10 min; 100 = healthy) ---
+  backend 10.1.1.5   probe health=100%  at 12:57
+  backend 10.1.1.4   probe health=100%  at 12:57
+--- vm-client: 50 new connections to the frontend, each backend directly, and internet egress ---
+  == 50 new connections to the frontend 10.1.1.10:443 ==
+       50 FAILED
+  == each backend directly ==
+  10.1.1.4 -> FAILED
+  10.1.1.5 -> FAILED
+  == internet egress from vm-client (snet-shared now private; existing VM keeps default outbound until deallocated) ==
+  https://www.microsoft.com -> HTTP 000
+--- WHAT-IF PASS 3: main.bicep ---
+  PREDICTION: NSGs no change; VNets show only read-only peering properties (doNotVerifyRemoteGateways, peerCompleteVnets, peeringSyncLevel, remote address spaces) = platform noise; NO subnets/defaultOutboundAccess and NO privateEndpointVNetPolicies lines.
+  what-if exit=0
+    Note: The result may contain false positive predictions (noise).
+    You can help us improve the accuracy of the result by opening an issue here: https://aka.ms/WhatIfIssues
+    NOTICE! - Want to get What-if without noise? Move to Deployment Stacks What-If https://aka.ms/stackswhatifGA
+    
+    Resource and property changes are indicated with these symbols:
+      - Delete
+      + Create
+      ~ Modify
+      = Nochange
+      * Ignore
+      x Noeffect
+    
+    The deployment will update the following scope:
+    
+    Scope: /subscriptions/<guid>/resourceGroups/RG-HUBSPOKE-LAB
+    
+      ~ Microsoft.Network/virtualNetworks/vnet-hub [2026-01-01]
+        ~ properties.subnets: [
+          ~ 0:
+    
+            + properties.defaultOutboundAccess: false
+    
+          ]
+        ~ properties.virtualNetworkPeerings: [
+          ~ 0:
+    
+            - properties.doNotVerifyRemoteGateways: false
+            - properties.peerCompleteVnets:         true
+            - properties.peeringSyncLevel:          "FullyInSync"
+            - properties.remoteAddressSpace:
+    
+                addressPrefixes: [
+                  0: "10.1.0.0/16"
+                ]
+    
+            - properties.remoteVirtualNetworkAddressSpace:
+    
+                addressPrefixes: [
+                  0: "10.1.0.0/16"
+                ]
+    
+    
+          ~ 1:
+    
+            - properties.doNotVerifyRemoteGateways: false
+            - properties.peerCompleteVnets:         true
+            - properties.peeringSyncLevel:          "FullyInSync"
+            - properties.remoteAddressSpace:
+    
+                addressPrefixes: [
+                  0: "10.2.0.0/16"
+                ]
+    
+            - properties.remoteVirtualNetworkAddressSpace:
+    
+                addressPrefixes: [
+                  0: "10.2.0.0/16"
+                ]
+    
+    
+          ]
+        x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+        x properties.virtualNetworkPeerings[1].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+    
+      ~ Microsoft.Network/virtualNetworks/vnet-hub/virtualNetworkPeerings/peer-hub-to-spoke1 [2026-01-01]
+        - properties.doNotVerifyRemoteGateways: false
+        - properties.peerCompleteVnets:         true
+        - properties.peeringSyncLevel:          "FullyInSync"
+        - properties.remoteAddressSpace:
+    
+            addressPrefixes: [
+              0: "10.1.0.0/16"
+            ]
+    
+        - properties.remoteVirtualNetworkAddressSpace:
+    
+            addressPrefixes: [
+              0: "10.1.0.0/16"
+            ]
+    
+    
+      ~ Microsoft.Network/virtualNetworks/vnet-hub/virtualNetworkPeerings/peer-hub-to-spoke2 [2026-01-01]
+        - properties.doNotVerifyRemoteGateways: false
+        - properties.peerCompleteVnets:         true
+        - properties.peeringSyncLevel:          "FullyInSync"
+        - properties.remoteAddressSpace:
+    
+            addressPrefixes: [
+              0: "10.2.0.0/16"
+            ]
+    
+        - properties.remoteVirtualNetworkAddressSpace:
+    
+            addressPrefixes: [
+              0: "10.2.0.0/16"
+            ]
+    
+    
+      ~ Microsoft.Network/virtualNetworks/vnet-spoke1 [2026-01-01]
+        ~ properties.virtualNetworkPeerings: [
+          ~ 0:
+    
+            - properties.doNotVerifyRemoteGateways: false
+            - properties.peerCompleteVnets:         true
+            - properties.peeringSyncLevel:          "FullyInSync"
+            - properties.remoteAddressSpace:
+    
+                addressPrefixes: [
+                  0: "10.0.0.0/16"
+                ]
+    
+            - properties.remoteVirtualNetworkAddressSpace:
+    
+                addressPrefixes: [
+                  0: "10.0.0.0/16"
+                ]
+    
+    
+          ]
+        x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+    
+      ~ Microsoft.Network/virtualNetworks/vnet-spoke1/virtualNetworkPeerings/peer-spoke1-to-hub [2026-01-01]
+        - properties.doNotVerifyRemoteGateways: false
+        - properties.peerCompleteVnets:         true
+        - properties.peeringSyncLevel:          "FullyInSync"
+        - properties.remoteAddressSpace:
+    
+            addressPrefixes: [
+              0: "10.0.0.0/16"
+            ]
+    
+        - properties.remoteVirtualNetworkAddressSpace:
+    
+            addressPrefixes: [
+              0: "10.0.0.0/16"
+            ]
+    
+    
+      ~ Microsoft.Network/virtualNetworks/vnet-spoke2 [2026-01-01]
+        ~ properties.virtualNetworkPeerings: [
+          ~ 0:
+    
+            - properties.doNotVerifyRemoteGateways: false
+            - properties.peerCompleteVnets:         true
+            - properties.peeringSyncLevel:          "FullyInSync"
+            - properties.remoteAddressSpace:
+    
+                addressPrefixes: [
+                  0: "10.0.0.0/16"
+                ]
+    
+            - properties.remoteVirtualNetworkAddressSpace:
+    
+                addressPrefixes: [
+                  0: "10.0.0.0/16"
+                ]
+    
+    
+          ]
+        x properties.virtualNetworkPeerings[0].type: "Microsoft.Network/virtualNetworks/virtualNetworkPeerings"
+    
+      ~ Microsoft.Network/virtualNetworks/vnet-spoke2/virtualNetworkPeerings/peer-spoke2-to-hub [2026-01-01]
+        - properties.doNotVerifyRemoteGateways: false
+        - properties.peerCompleteVnets:         true
+        - properties.peeringSyncLevel:          "FullyInSync"
+        - properties.remoteAddressSpace:
+    
+            addressPrefixes: [
+              0: "10.0.0.0/16"
+            ]
+    
+        - properties.remoteVirtualNetworkAddressSpace:
+    
+            addressPrefixes: [
+              0: "10.0.0.0/16"
+            ]
+    
+    
+      = Microsoft.Network/networkSecurityGroups/nsg-spoke1-workload [2026-01-01]
+      = Microsoft.Network/networkSecurityGroups/nsg-spoke2-workload [2026-01-01]
+      = Microsoft.Network/routeTables/rt-spoke1-workload [2026-01-01]
+      = Microsoft.Network/routeTables/rt-spoke2-workload [2026-01-01]
+      * Microsoft.Compute/disks/vm-client_OsDisk_1_5f93faca1e4d4a6e83bf9568a233af84
+      * Microsoft.Compute/disks/vm-web1_OsDisk_1_cc5d9ba898d64dbda74fe8066110c2bb
+      * Microsoft.Compute/disks/vm-web2_OsDisk_1_f4556366e6f04595860d15e6f3433320
+      * Microsoft.Compute/virtualMachines/vm-client
+      * Microsoft.Compute/virtualMachines/vm-web1
+      * Microsoft.Compute/virtualMachines/vm-web2
+      * Microsoft.Network/loadBalancers/lb-spoke1-web
+      * Microsoft.Network/networkInterfaces/nic-vm-client
+      * Microsoft.Network/networkInterfaces/nic-vm-web1
+      * Microsoft.Network/networkInterfaces/nic-vm-web2
+      * Microsoft.Network/publicIPAddresses/pip-bas-hub
+    
+    Resource changes: 7 to modify, 4 no change, 11 to ignore.
+--- WHAT-IF PASS 3: lab3\lb.bicep ---
+  PREDICTION: no numberOfProbes or disableOutboundSnat lines; NIC read-only noise only.
+  what-if exit=0
+    Note: The result may contain false positive predictions (noise).
+    You can help us improve the accuracy of the result by opening an issue here: https://aka.ms/WhatIfIssues
+    NOTICE! - Want to get What-if without noise? Move to Deployment Stacks What-If https://aka.ms/stackswhatifGA
+    
+    Resource and property changes are indicated with these symbols:
+      - Delete
+      + Create
+      ~ Modify
+      * Ignore
+      x Noeffect
+    
+    The deployment will update the following scope:
+    
+    Scope: /subscriptions/<guid>/resourceGroups/RG-HUBSPOKE-LAB
+    
+      ~ Microsoft.Network/loadBalancers/lb-spoke1-web [2024-05-01]
+        + tags:
+    
+            costCenter:  "CC-1001"
+            environment: "lab"
+            lab:         "lab3"
+            owner:       "jeff"
+            project:     "azure-hub-spoke-network"
+    
+        ~ properties.backendAddressPools: [
+          ~ 0:
+    
+            - properties:
+    
+                loadBalancerBackendAddresses: [
+                  0:
+    
+                    etag:                         "W/"<guid>""
+                    id:                           "/subscriptions/<guid>/resourceGroups/rg-hubspoke-lab/providers/Microsoft.Network/loadBalancers/lb-spoke1-web/backendAddressPools/be-web/loadBalancerBackendAddresses/rg-hubspoke-lab_nic-vm-web1ipconfig1"
+                    name:                         "rg-hubspoke-lab_nic-vm-web1ipconfig1"
+                    properties.provisioningState: "Succeeded"
+                    type:                         "Microsoft.Network/loadBalancers/backendAddressPools/loadBalancerBackendAddresses"
+    
+                  1:
+    
+                    etag:                         "W/"<guid>""
+                    id:                           "/subscriptions/<guid>/resourceGroups/rg-hubspoke-lab/providers/Microsoft.Network/loadBalancers/lb-spoke1-web/backendAddressPools/be-web/loadBalancerBackendAddresses/rg-hubspoke-lab_nic-vm-web2ipconfig1"
+                    name:                         "rg-hubspoke-lab_nic-vm-web2ipconfig1"
+                    properties.provisioningState: "Succeeded"
+                    type:                         "Microsoft.Network/loadBalancers/backendAddressPools/loadBalancerBackendAddresses"
+    
+                ]
+    
+    
+          ]
+        ~ properties.frontendIPConfigurations: [
+          ~ 0:
+    
+            ~ zones: [
+              + 0: "1"
+              - 1: "1"
+              + 1: "2"
+              - 2: "2"
+              ]
+    
+          ]
+        ~ properties.loadBalancingRules: [
+          ~ 0:
+    
+            - properties.allowBackendPortConflict:         false
+            - properties.backendAddressPools: [
+                0:
+    
+                  id: "/subscriptions/<guid>/resourceGroups/rg-hubspoke-lab/providers/Microsoft.Network/loadBalancers/lb-spoke1-web/backendAddressPools/be-web"
+    
+              ]
+            - properties.disableConnectionTracking:        false
+            - properties.enableConnectionTracking:         false
+            - properties.enableDestinationServiceEndpoint: false
+    
+          ]
+        ~ properties.probes: [
+          ~ 0:
+    
+            - properties.noHealthyBackendsBehavior: "AllProbedDown"
+    
+          ]
+    
+      ~ Microsoft.Network/networkInterfaces/nic-vm-web1 [2024-05-01]
+        - kind:                                                                      "Regular"
+        - properties.allowPort25Out:                                                 false
+        - properties.auxiliaryMode:                                                  "None"
+        - properties.auxiliarySku:                                                   "None"
+        - properties.disableTcpStateTracking:                                        false
+        ~ properties.ipConfigurations: [
+          ~ 0:
+    
+            - properties.privateIPAddressVersion: "IPv4"
+    
+          ]
+        x properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools: [
+            0:
+    
+              id: "/subscriptions/<guid>/resourceGroups/rg-hubspoke-lab/providers/Microsoft.Network/loadBalancers/lb-spoke1-web/backendAddressPools/be-web"
+    
+          ]
+        x properties.ipConfigurations[0].properties.primary:                         true
+    
+      ~ Microsoft.Network/networkInterfaces/nic-vm-web2 [2024-05-01]
+        - kind:                                                                      "Regular"
+        - properties.allowPort25Out:                                                 false
+        - properties.auxiliaryMode:                                                  "None"
+        - properties.auxiliarySku:                                                   "None"
+        - properties.disableTcpStateTracking:                                        false
+        ~ properties.ipConfigurations: [
+          ~ 0:
+    
+            - properties.privateIPAddressVersion: "IPv4"
+    
+          ]
+        x properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools: [
+            0:
+    
+              id: "/subscriptions/<guid>/resourceGroups/rg-hubspoke-lab/providers/Microsoft.Network/loadBalancers/lb-spoke1-web/backendAddressPools/be-web"
+    
+          ]
+        x properties.ipConfigurations[0].properties.primary:                         true
+    
+      * Microsoft.Compute/disks/vm-client_OsDisk_1_5f93faca1e4d4a6e83bf9568a233af84
+      * Microsoft.Compute/disks/vm-web1_OsDisk_1_cc5d9ba898d64dbda74fe8066110c2bb
+      * Microsoft.Compute/disks/vm-web2_OsDisk_1_f4556366e6f04595860d15e6f3433320
+      * Microsoft.Compute/virtualMachines/vm-client
+      * Microsoft.Compute/virtualMachines/vm-web1
+      * Microsoft.Compute/virtualMachines/vm-web2
+      * Microsoft.Network/networkInterfaces/nic-vm-client
+      * Microsoft.Network/networkSecurityGroups/nsg-spoke1-workload
+      * Microsoft.Network/networkSecurityGroups/nsg-spoke2-workload
+      * Microsoft.Network/publicIPAddresses/pip-bas-hub
+      * Microsoft.Network/routeTables/rt-spoke1-workload
+      * Microsoft.Network/routeTables/rt-spoke2-workload
+      * Microsoft.Network/virtualNetworks/vnet-hub
+      * Microsoft.Network/virtualNetworks/vnet-spoke1
+      * Microsoft.Network/virtualNetworks/vnet-spoke2
+    
+    Resource changes: 3 to modify, 15 to ignore.
+  drift lines still present for the declared properties (should be 0): 1
+    -> + properties.defaultOutboundAccess: false
+  RETRACTION (see lab3-05): 'CORRECTION 2' above is wrong - the what-if subnets[0] line is AzureBastionSubnet (name-sorted); snet-shared was already private before the 12:42 deploy.

@@ -1,0 +1,58 @@
+=== Lab 3 teardown, 2026-11-05 13:28 ===
+  final results before teardown: LB 50 connections = 20 vm-web1 / 30 vm-web2; Bastion Basic Succeeded (zones 1,2,3); SSH key logins vm-client from 10.0.3.4, vm-web1 from 10.0.3.5 (two Bastion instances).
+--- 0. code: remove AzureBastionSubnet from main.bicep (v5) ---
+  main.bicep size 3128                       True
+  AzureBastionSubnet removed from code       True
+  snet-shared defaultOutboundAccess false    True
+  bicep build                                True
+--- 1. Bastion delete started (no-wait; it takes ~10 min) ---
+=== Lab 3 teardown, 2026-11-05 14:21 ===
+  final results before teardown: LB 50 connections = 20 vm-web1 / 30 vm-web2; Bastion Basic Succeeded (zones 1,2,3); SSH key logins vm-client from 10.0.3.4, vm-web1 from 10.0.3.5 (two Bastion instances).
+--- 0. code: remove AzureBastionSubnet from main.bicep (v5) ---
+  main.bicep size 3128                       True
+  AzureBastionSubnet removed from code       True
+  snet-shared defaultOutboundAccess false    True
+  bicep build                                True
+--- 1. Bastion delete started (no-wait; it takes ~10 min) ---
+  step 1 hung: 'az network bastion delete' most likely waited at a hidden y/n confirmation (stderr sent to 2>$null). Bastion was deleted manually in the portal; block interrupted, nothing else had run.
+  LESSON: never redirect stderr on a command that can prompt; pass --yes where supported, or let the prompt show.
+=== Lab 3 teardown (resumed), 2026-11-05 14:23 ===
+--- 0. code check (main.bicep v5 already in place) ---
+  main.bicep size 3128                       True
+  AzureBastionSubnet removed from code       True
+  bicep build                                True
+--- 1. Bastion (deleted in the portal) - confirm gone, wait if still deleting (max 20 min) ---
+  bas-hub gone=True
+--- 2. VMs, then their NICs and OS disks ---
+  vm delete exit=0
+  nic nic-vm-client delete exit=0
+  nic nic-vm-web1 delete exit=0
+  nic nic-vm-web2 delete exit=0
+  disk vm-client_OsDisk_1_5f93faca1e4d4a6e83bf9568a233af84 delete exit=0
+  disk vm-web1_OsDisk_1_cc5d9ba898d64dbda74fe8066110c2bb delete exit=0
+  disk vm-web2_OsDisk_1_f4556366e6f04595860d15e6f3433320 delete exit=0
+--- 3. load balancer ---
+  lb delete exit=0
+--- 4. public IP, Bastion subnet, policy exemption ---
+  pip-bas-hub delete exit=0
+  AzureBastionSubnet delete exit=0
+  exemption ex-lab3-bastion delete exit=0
+--- 5. local SSH key (lab only) ---
+  lab3_bastion key files present now: False
+--- 6. VERIFY ---
+  remaining: Microsoft.Network/networkSecurityGroups              nsg-spoke1-workload
+  remaining: Microsoft.Network/networkSecurityGroups              nsg-spoke2-workload
+  remaining: Microsoft.Network/routeTables                        rt-spoke1-workload
+  remaining: Microsoft.Network/routeTables                        rt-spoke2-workload
+  remaining: Microsoft.Network/virtualNetworks                    vnet-hub
+  remaining: Microsoft.Network/virtualNetworks                    vnet-spoke1
+  remaining: Microsoft.Network/virtualNetworks                    vnet-spoke2
+  hub subnets now: snet-shared, GatewaySubnet
+  running VMs in the subscription: 0
+  what-if main.bicep after teardown: Resource changes: 7 to modify, 4 no change.
+  subnet/delete lines in what-if (should be 0): 0
+  budget budget-az104-lab: spent 0.7606962304344933 of 10.0 this period
+  budget budget-backup-dr-lab: spent 0.1573434 of 5.0 this period
+  budget budget-compute-hosting-lab: spent 0.3440676718550209 of 5.0 this period
+  budget budget-storage-pe-lab: spent 0.0623624513794723 of 5.0 this period
+  leak check (should be 0): 0
